@@ -17,7 +17,7 @@ import time
 def run(meshname="carto_meshes/OC44/1-Baseline.mesh", plt=False, save=False, boxplot=False,
         switches="-pYkANEFq1.5/20 -ae+06", refine_steps=10,
         keep_intmed=False, skip_reading=False, HULK=False, mesh_format="carto",
-        min_edge=700., max_edge=1400., return_surfacemesh=True, nvar=1, from_stl=False, n_col=1):
+        min_edge=700., max_edge=1400., return_surfacemesh=True, ncv=1, from_stl=False, n_col=1):
     """Reads in .mesh file and writes out a refined tetrahedron mesh in .vtk format and carp format.
     If 'speed.csv' exists in the cwd, also interpolates these speeds on the mesh. speed.csv should be a csv file with
     columns 'x', 'y', 'z' and 'speed', where the xyz coordinates refer to point coordinates. Can be calculated with
@@ -39,7 +39,7 @@ def run(meshname="carto_meshes/OC44/1-Baseline.mesh", plt=False, save=False, box
     @param max_edge: <float> maximum allowed edge length for the mesh in µm
     @param return_surfacemesh: <bool> stop the tetrahedralisation and return the refined double-layered surface mesh
     instead (for testing purposes)
-    @param nvar: <int> amount of different conduction velocity distributions to be made. 1 corresponds with the
+    @param ncv: <int> amount of different conduction velocity distributions to be made. 1 corresponds with the
     original conduction velocities
     @param from_stl: <bool> Read in .stl file instead of .smesh file. Useful for preprocessing of meshes with e.g. MeshLab
     (not fully implemented yet)
@@ -58,7 +58,7 @@ def run(meshname="carto_meshes/OC44/1-Baseline.mesh", plt=False, save=False, box
     step = 1  # progress
     start = time.time()
 
-    def read_meshes(meshname_, meshdir_, mesh_format_="carto", step_=step):
+    def writeCsv(meshname_, meshdir_, mesh_format_="carto", step_=step):
         """Creates separate csv files per section for a carto mesh in the same folder"""
         if mesh_format_ == "carto":
             print("---- {}. Reading CARTO .mesh file and writing to csv\n".format(step_))
@@ -84,7 +84,7 @@ def run(meshname="carto_meshes/OC44/1-Baseline.mesh", plt=False, save=False, box
             steps = 2
         mesh = create_surface.run(of=of_, plot_mesh=plot_mesh, refine_steps=refine_steps_, boxplot=boxplot_,
                                   meshdir=meshdir_, min_edge=min_edge_, max_edge=max_edge_, returnmesh=True)
-        colors.colorFromCsv(meshdir_)
+        colors.colorFromCsv(meshdir_)  # TODO: this is optional and unused in further code
         return mesh
 
     def tetrahedralise(mesh, filename_=fn, switches_=switches, HULK_=HULK):
@@ -99,14 +99,14 @@ def run(meshname="carto_meshes/OC44/1-Baseline.mesh", plt=False, save=False, box
         i = 0
         while i < n_col and len(colinear_pairs) > 0:  # check for collinear pairs
             print("\n\tCollinearity found! Adapting points...")
-            mesh = mesh_tools.makeNonCollinear(double_layered_mesh, colinear_pairs)
-            create_surface.writeSmesh(mesh, "{}".format(fn))
+            mesh_ = mesh_tools.makeNonCollinear(mesh, colinear_pairs)
+            create_surface.writeSmesh(mesh_, "{}".format(fn))
             tet.run(filename=fn, switches=switches_, HULK=HULK_)
             i += 1
 
     # Read in the meshes
     if not skip_reading:
-        read_meshes(meshname, meshdir, step_=step)
+        writeCsv(meshname, meshdir, step_=step)
         step += 1
 
     # Add second layer of points and triangles
@@ -147,9 +147,10 @@ def run(meshname="carto_meshes/OC44/1-Baseline.mesh", plt=False, save=False, box
                                     ofmt='vtk')  # Make sure .vtk file is same as carp file after cleaning
     step += 1
 
-    print("\n---- {}. Applying conduction velocities\n".format(step))
-    apply_cv.run(meshdir, fn + '.1.vtk', write_VTK_file=True, n_variations=nvar)
-    step += 1
+    if ncv:
+        print("\n---- {}. Applying conduction velocities\n".format(step))
+        apply_cv.run(meshdir, fn + '.1.vtk', write_VTK_file=True, n_variations=ncv)
+        step += 1
 
     if not keep_intmed:  # delete intermediate files
         print("\n----- {}. Deleting intermediate files\n".format(step))
@@ -236,6 +237,11 @@ if __name__ == '__main__':
     parser.add_argument('--col_retry',
                         help='Amount of times the colinearity will be fixed (or attempt to do so).',
                         type=int, default=1)
+    parser.add_argument('--ncv',
+                        help='Amount of conduction velocity variations.\n'
+                             'First variation is always the reconstruction\n'
+                             ' of the original distribution.',
+                        type=int, default=0)
     args = parser.parse_args()
     if not args.filename:  # no filename given
         if args.format == "carto":
@@ -254,5 +260,5 @@ if __name__ == '__main__':
 
     run(meshname=filename, switches=switches, plt=args.p, save=args.ps, keep_intmed=args.ki, skip_reading=args.sr,
         mesh_format=args.format, min_edge=min_edge, max_edge=max_edge, refine_steps=args.steps,
-        boxplot=args.boxplot, return_surfacemesh=False, nvar=args.nvar, HULK=args.HULK, from_stl=args.stl,
+        boxplot=args.boxplot, return_surfacemesh=False, ncv=args.ncv, HULK=args.HULK, from_stl=args.stl,
         n_col=args.col_retry)
