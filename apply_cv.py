@@ -124,7 +124,7 @@ def run(meshdir="", meshname=None, speed_limit=None, plot_mesh=False, radius=400
 
     # read in data
     input_data = pd.read_csv(glob.glob(meshdir + "speed.csv")[0],
-                             usecols=["speed", "x", "y", "z"])  #"output/movie/output/movie/movie_*.csv"
+                             usecols=["speed", "x", "y", "z"])  # "output/movie/output/movie/movie_*.csv"
     med_speed = np.mean(input_data["speed"])
     input_data["x_um"] = [1000. * e for e in input_data["x"]]
     input_data["y_um"] = [1000. * e for e in input_data["y"]]

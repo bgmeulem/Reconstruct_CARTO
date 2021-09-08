@@ -16,7 +16,6 @@ from sklearn import neighbors as nb
 import carto2csv
 import add_points
 sys.path.append('/'.join(os.getcwd().split('/')[:-1]))  # so that other Directories can be imported
-from Machine_Learning.data_handling import getSimDirs
 from mesh_tools import pmToPvFaces
 from mesh_tools import transform, getBandsAroundRegions
 import create_surface
