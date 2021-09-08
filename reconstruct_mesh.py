@@ -3,7 +3,7 @@ import carto2csv
 import mat2csv
 import argparse
 import create_surface
-import colors
+import extract_tags
 import pts2paraview
 import mesh_tools
 import apply_cv
@@ -84,7 +84,7 @@ def run(meshname="carto_meshes/OC44/1-Baseline.mesh", plt=False, save=False, box
             steps = 2
         mesh = create_surface.run(of=of_, plot_mesh=plot_mesh, refine_steps=refine_steps_, boxplot=boxplot_,
                                   meshdir=meshdir_, min_edge=min_edge_, max_edge=max_edge_, returnmesh=True)
-        colors.colorFromCsv(meshdir_)  # TODO: this is optional and unused in further code
+        extract_tags.colorFromCsv(meshdir_)  # TODO: this is optional and unused in further code
         return mesh
 
     def tetrahedralise(mesh, filename_=fn, switches_=switches, HULK_=HULK):

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import glob
 import os
 from sklearn import neighbors as nb
-import colors
+import extract_tags
 from mesh_tools import getGroupIds
 
 plt.style.use("fivethirtyeight")
@@ -164,7 +164,7 @@ def run(meshdir="", meshname=None, speed_limit=None, plot_mesh=False, radius=400
                 speeds[i] = np.abs(new_cv)
             calculated_data["speed"] = speeds
 
-        colors.run()  # creates colors.csv
+        extract_tags.run()  # creates colors.csv
         if os.path.exists(meshdir + "noncond.csv"):
             non_cond = np.array(pd.read_csv('noncond.csv').values)
             non_cond = pv.PolyData(non_cond)
