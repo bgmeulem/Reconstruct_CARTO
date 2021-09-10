@@ -36,7 +36,7 @@ directory as the mesh called "speed.csv" with the calculated speeds and column n
 - argparse
 - logging for DGMdefinitions (can be made optional)
 
-TODO:
+# TODO:
 - not all intermediate files get deleted
 - implementation of reading in .stl meshes
 - implementation of reading in .mat meshes
