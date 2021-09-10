@@ -1,15 +1,12 @@
 import random
-
 import matplotlib.colors
 import pyvista as pv
 import scipy.stats
-
 from create_surface import pvToPmCells
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-from matplotlib.gridspec import GridSpec
 import numpy as np
 import sys
 from sklearn import neighbors as nb
@@ -17,20 +14,26 @@ import carto2csv
 import add_points
 sys.path.append('/'.join(os.getcwd().split('/')[:-1]))  # so that other Directories can be imported
 from mesh_tools import pmToPvFaces
-from mesh_tools import transform, getBandsAroundRegions
 import create_surface
 plt.style.use('fivethirtyeight')
 colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six 'fivethirtyeight' themed colors
 
 
 def run(filename, title="", save=False, show_edges=True, wfcolor='white', wfopacity=.2, legend=False, half=False):
-    print("Reading mesh")
+    """Plots mesh as half wireframe and half filled cells. Cell color can be set to the cell quality.
+    @param filename: <str> name of the .vtk file to be plotted
+    @param title: <str> title of the plot
+    @param save: <bool> save the plot
+    @param show_edges: <bool> show edges of mesh
+    @param wfcolor: <str> color of the wireframe
+    @param wfopacity: <float> Opacity of the wireframe plot (between 0-1)
+    @param legend: <bool> add legend or not
+    @param half: <bool> show plot as half wireframe, half filled cells"""
     if type(filename) == str:
         data = pv.read(filename)
         title = filename
     else:
         data = filename
-    print("Cell processing")
     cells = pvToPmCells(data.cells)
     cell_center = data.points[cells].mean(1)
     cx, cy, cz = data.points.mean(axis=0)  # center of entire mesh

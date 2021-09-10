@@ -28,6 +28,7 @@ directory as the mesh called "speed.csv" with the calculated speeds and column n
 - random
 - sys
 - scipy.spatial.transform.Rotation
+- scipy.stats
 - collections.OrderedDict
 - numpy
 - io
