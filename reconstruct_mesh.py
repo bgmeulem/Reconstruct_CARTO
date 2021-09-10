@@ -186,7 +186,6 @@ if __name__ == '__main__':
                              "-q  +minRadiusEdgeRatio/minDihAngle - Refines mesh (improves quality)\n"
                              "-a  +volume - Volume constraint in µm³ (default = 2.0e+08)\n"
                              "-m  Uses mesh sizing function for edge lengths"
-                             "    Don't go too much finer. This already yields O(e+05) steiner points\n"
                              "-V  (optional) for verbose output\n"
                              "-O  Optimisation level: flip level/local optimisation/maximum iterations\n"
                              "    0-10/0-7/inf    default: 3/7/3"
@@ -196,17 +195,19 @@ if __name__ == '__main__':
 
     parser.add_argument('--p',
                         help="Add this optional argument to open interactive vtk window\nshowing a plot"
-                             "of the tetrahedralized mesh.", nargs='?',
+                             " of the tetrahedralized mesh.", nargs='?',
                         default=False, const=True)
     parser.add_argument('--ps',
                         help="Add this optional argument to open interactive vtk window\nshowing a plot"
-                             "of the tetrahedralized mesh\nand save the plot on exit.", nargs='?',
+                             " of the tetrahedralized mesh\nand save the plot on exit.", nargs='?',
                         default=False, const=True)
     parser.add_argument('--er',
                         help="Desired Edge Range of the mesh. Min and max value, separated by a \"-\".\n"
-                             "Default = 500-1100 µm", default="500-1100")
+                             "Default = 500-1000 µm", default="500-1000")
     parser.add_argument('--steps',
-                        help="Amount of refinement steps taken. Should be sufficiently large for fine meshes.",
+                        help="Amount of edge resizing steps taken.\n"
+                             "Should be sufficiently large for fine meshes.\n"
+                             "Default = 10",
                         default=10, type=int)
     parser.add_argument('--ki',
                         help="Add this optional argument to keep intermediately\n"
@@ -234,7 +235,8 @@ if __name__ == '__main__':
     parser.add_argument('--stl', help='If file should be read from \'Surface.stl\'',
                         nargs='?', default=False, const=True)
     parser.add_argument('--col_retry',
-                        help='Amount of times the colinearity will be fixed (or attempt to do so).',
+                        help='Amount of times the collinearities will be fixed (or attempt to do so).\n'
+                             'Default = 1',
                         type=int, default=1)
     parser.add_argument('--ncv',
                         help='Amount of conduction velocity variations.\n'
