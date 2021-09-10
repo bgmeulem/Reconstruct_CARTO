@@ -4,7 +4,6 @@ import mat2csv
 import argparse
 import create_surface
 import extract_tags
-import pts2paraview
 import mesh_tools
 import apply_cv
 import tet
