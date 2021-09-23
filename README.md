@@ -1,6 +1,9 @@
 # Reconstruct_CARTO
 Reconstructs a simulatable 3D mesh from CARTO data
 
+# Usage
+python reconstruct.py --filename=location/of/meshfile
+
 reconstruct_mesh.py combines the following files to reconstruct a simulatable mesh from carto data:
 1. carto2csv.py
 2. add_points.py
