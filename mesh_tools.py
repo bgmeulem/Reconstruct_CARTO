@@ -5,18 +5,26 @@ from sklearn import neighbors as nb
 import pandas as pd
 from subprocess import Popen, PIPE
 import pymesh as pm
-import matplotlib.pyplot as plt
 import sys
 import io
-import glob
-import os
-from scipy.spatial.transform import Rotation
-from collections import OrderedDict
-# sys.path.append('/'.join(os.getcwd().split('/')[:-1]))  # so that Mesh_Reconstruction directory can be imported
-# from Mesh_Reconstruction.carto2csv import meshToCsv #Mesh_Reconstruction. # import can be difficult when in terminal/IDE -> add/delete parent
+from tqdm import tqdm
 
-plt.style.use('fivethirtyeight')
-colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six fivethirtyeight themed colors
+
+def normalize(vector):
+    return [e / np.sqrt(np.dot(vector, vector)) for e in vector]
+
+
+def calcAvNormal(facets):
+    """Calculates the average normal of a dataframe of triangles. Dataframe must contain
+    the components of the normals of each triangle in columns named 'NormalX', 'NormalY', 'NormalZ'
+    as is the case for Carto data"""
+    av_normal = [0, 0, 0]
+    # loop over all facets and calculate average normal
+    for row in facets[['NormalX', 'NormalY', 'NormalZ', 'GroupID']].iterrows():
+        for i in range(len(av_normal)):  # from 0 to 2
+            av_normal[i] += row[1][i]
+    av_normal = normalize(av_normal)
+    return av_normal
 
 
 def meshToCsv(inmesh, meshdir="", verbose=True):
@@ -102,7 +110,8 @@ def dist(co1, co2):
 
 
 def pmToPvFaces(pmfaces):
-    return np.array([[len(f), *f] for f in pmfaces])
+    assert pmfaces.shape[1] == 3, 'At least one cell does not have 3 indices'
+    return np.array([[len(f), *f] for f in pmfaces]).flatten()
 
 
 def pvToPmCells(pyvistafaces):
@@ -236,46 +245,36 @@ def cleanMesh_Meshtool(meshname, threshold=.3, ifmt='carp_txt', ofmt='carp_txt')
               shell=True, stdout=PIPE, encoding='utf-8')
 
     # Output category check
-    el = False
-    wel = False
-    po = False
-    wp = False
-    f = False
-    wf = False
+    output_map = {'Reading elements': 'Reading elements in text CARP format...',
+                  'Reading points': 'Reading points in text CARP format...',
+                  'Reading fibers': 'Reading fibers (1 direction) in text CARP format...',
+                  'Writing elements': 'Writing elements in text CARP format...',
+                  'Writing points': 'Writing points in text CARP format...',
+                  'Writing fibers': 'Writing fibers in text CARP format...',
+                  'Reading mesh': 'Reading mesh...',
+                  'Writing mesh': 'Writing mesh...',
+                  'Iteration': 'Shifting points...'}
 
     # output handling
     for line in p.stdout:
         line = str(line.rstrip())
         if line:
-            if 'Reading elements' in line:
-                if not el:
-                    el = True
-                    print('\tReading elements in text CARP format...')
-            elif 'Reading points' in line:
-                if not po:
-                    po = True
-                    print('\tReading points in text CARP format...')
-            elif 'Reading fibers' in line:
-                if not f:
-                    f = True
-                    print('\tReading fibers (1 directions) in text CARP format...')
-            elif 'ETA' in line:
-                pass
-            elif 'Writing elements' in line:
-                if not wel:
-                    wel = True
-                    print('\tWriting elements in text CARP format..')
-            elif 'Writing points' in line:
-                if not wp:
-                    wp = True
-                    print('\tWriting points in text CARP format...')
-            elif 'Writing fibers' in line:
-                if not wf:
-                    wf = True
-                    print('\tWriting fibers (1 direction) in text CARP format...')
-            else:
-                print('\t' + line)
-            p.stdout.flush()
+            for key, val in output_map.items():
+                if key in line:
+                    print('\t'+val)
+                    output_map.pop(key)
+                    break
+
+
+def getEdgeLengths(mesh):
+    """Gets all edge lengths from a PyMesh mesh (used in homogenizeMesh())"""
+    edges = mesh.extract_all_edges()
+    pmedges = pvToPmCells(edges.extract_cells(range(edges.n_cells)).cells)  # extract edge ind as cells
+    distances = []
+    for pair in pmedges:
+        co1, co2 = edges.points[pair]
+        distances.append(dist(co1, co2))
+    return distances
 
 
 def convertMesh_Meshtool(meshname, ifmt='vtk', ofmt='carp_txt'):
@@ -289,57 +288,27 @@ def convertMesh_Meshtool(meshname, ifmt='vtk', ofmt='carp_txt'):
               shell=True, stdout=PIPE, stderr=PIPE, encoding='utf-8')
 
     # checks if meshtool is at a certain point in output
-    # for vtk to carp conversion
-    vtkReading = False
-    el = False
-    po = False
-    f = False
-    # for carp to vtk conversion
-    rel = False
-    rpo = False
-    rfi = False
-    wvtk = False
+    # Output category check
+    output_map = {'Reading elements': 'Reading elements in text CARP format...',
+                  'Reading points': 'Reading points in text CARP format...',
+                  'Reading fibers': 'Reading fibers (1 direction) in text CARP format...',
+                  'Writing elements': 'Writing elements in text CARP format...',
+                  'Writing points': 'Writing points in text CARP format...',
+                  'Writing fibers': 'Writing fibers in text CARP format...',
+                  'Reading vtk': 'Reading vtk file...',
+                  'Writing vtk file in text format': 'Writing vtk file in text format...',
+                  'Reading mesh': 'Reading mesh...',
+                  'Writing mesh': 'Writing mesh...'}
+
     # output handling
     for line in p.stdout:
         line = str(line.rstrip())
         if line:
-            # If statements is to prevent messy output (meshtool convert has lots of progress bars)
-            # They reduce duplicate output lines to one line
-            if 'Reading vtk' in line:
-                if not vtkReading:
-                    vtkReading = True
-                    print('\tReading vtk file...')
-            elif 'Writing elements' in line:
-                if not el:
-                    el = True
-                    print('\tWriting elements in txt CARP format...')
-            elif 'Writing points' in line:
-                if not po:
-                    po = True
-                    print('\tWriting points in text CARP format...')
-            elif 'Writing fibers' in line:
-                if not f:
-                    f = True
-                    print('\tWriting fibers (1 direction) in text CARP format...')
-            elif 'Reading elements in text CARP format' in line:
-                if not rel:
-                    rel = True
-                    print('\tReading elements in text CARP format...')
-            elif 'Reading points in text CARP format' in line:
-                if not rpo:
-                    rpo = True
-                    print('\tReading points in text CARP format...')
-            elif 'Reading fibers (1 directions) in text CARP format' in line:
-                if not rfi:
-                    rfi = True
-                    print("\tReading fibers (1 directions) in text CARP format")
-            elif 'Writing vtk file in text format' in line:
-                if not wvtk:
-                    wvtk = True
-                    print('\tWriting vtk file in text format...')
-            elif not 'ETA' in line:
-                print('\t' + line)
-            p.stdout.flush()
+            for key, val in output_map.items():
+                if key in line:
+                    print('\t'+val)
+                    output_map.pop(key)
+                    break
 
 
 def vtkToStl(vtk_mesh, location, meshname):
@@ -348,6 +317,49 @@ def vtkToStl(vtk_mesh, location, meshname):
     print(faces)
     print(faces.faces)
     pv.save_meshio(location+'/'+meshname.split('.')[0]+'.stl', faces)
+
+
+def writeToSmesh(mesh, name):
+    of = open(name + '.smesh', 'w+')
+    # attr_names = mesh.array_names ??
+
+    # Write points
+    of.write("# Part 1 - the node list\n")
+    # <# of points> <dimension (3)> <# of attributes> <boundary markers (0 or 1)>
+    # npoints, 3D, 1 attribute (= g_region 1107558400), 1 for boundary marker
+    attr_names = ["g_region"]  # hard-coded until correct implementation
+    of.write("{} 3 {} 1\n".format(mesh.n_points, len(attr_names)))  # header
+    pointbar = tqdm(mesh.points, position=0, desc='        Writing points  ')
+    for i, pt in enumerate(pointbar):
+        of.write("{} {} {} {} ".format(i, *[round(co, 3) for co in pt]))  # index and co
+        of.write(
+            "1107558400 ")  # hard-coded g_region as example, corresponds to normal cardiac tissue TODO: magic number
+        # for attr in attr_names:  # attributes
+        # of.write(str(mesh[attr][i]) + " ")
+        of.write("1\n")  # boundary marker
+
+    # Write faces
+    of.write("# Part 2 - the facet list\n")
+    # <# of facets> <boundary markers (0 or 1)>
+    of.write("{} 1\n".format(mesh.n_faces))  # header
+
+    faces = pvToPmCells(mesh.faces)
+    facesbar = tqdm(faces, position=0, desc='        Writing faces  ')
+    for f in facesbar:
+        # 1 polygon, boundary marker
+        of.write("3")
+        for v in f:
+            of.write(" {}".format(v))
+        of.write(" 1\n")
+    pointbar.close()
+    facesbar.close()
+
+    # Write hole
+    of.write("# Part 3 - the hole list\n")
+    # <# of holes>
+    of.write("1" + '\n')
+    # Coordinate of hole (i.e. center of mesh)
+    of.write("0 {} {} {}\n".format(*np.array(mesh.points).mean(axis=0)))
 
 
 def cleanMesh(pvmesh, tol, iter=10, print_si=True):
@@ -384,226 +396,3 @@ def getGroupIds(csvfile='TrianglesSection.csv', skip="default"):
     ids = set([e for e in f["GroupID"].values if e not in skip])
     return list(ids)
 
-
-def getRegionCenters(case='OC59', plot=False, method='mean', location='../carto_meshes'):
-    if case == 'all':  # for testing purposes
-        dirs = glob.glob('../carto_meshes/*/')
-        meshnames = glob.glob("../carto_meshes/*/*µm.1.vtk")
-        meshnames.sort(key=lambda x: int(x.split('/')[2][2:]))
-        dirs.sort(key=lambda x: int(x.split('/')[2][2:]))
-    else:
-        meshnames = glob.glob('{}/{}/*µm.1.vtk'.format(location, case))
-        dirs = glob.glob('{}/{}/'.format(location, case))
-
-    for m, d in zip(meshnames, dirs):
-        regions = ['MV', 'LPV', 'RPV']
-        auto_detected = []
-        center_points = {}  # to return
-
-        for name in regions:  # manually selected tags in Scars/ directory
-            if os.path.exists(d+'Scars/{}.csv'.format(name)):
-                scars = [e for e in glob.glob(d+'Scars/*.csv') if name in e]
-                scar = pd.DataFrame(columns=['meshID'])
-                for s in scars:
-                    scar = scar.append(pd.read_csv(s))
-                mesh = pv.read(m)
-                if method == 'mean':
-                    cp = np.mean(mesh.points[[e[0] for e in scar.values]], axis=0)
-                elif method == 'median':
-                    cp = np.median(mesh.points[[e[0] for e in scar.values]], axis=0)
-                center_points[name] = cp.tolist()
-            else:
-                auto_detected.append(name)
-
-        if len(auto_detected):  # not all regions were manually selected: some were present and functional in .mesh file
-            if case in ['OC52']:
-                tagdict = {'MV': [-8], 'LPV': [-5, -4], 'RPV': [-6, -7]}
-            else:
-                tagdict = {'MV': [-4], 'LPV': [-5], 'RPV': [-6]}
-            meshToCsv(glob.glob(d+'*.mesh')[0], meshdir=d, verbose=False)  # make tagged vtk file
-
-            cm = colorFromCsv(d)  # tagged (color) mesh
-            for name in auto_detected:  # tags present in CARTO .mesh file
-                t = tagdict[name]
-                points = cm.points[np.in1d(cm['color'], t)]  # get all points that have tag t
-                if method == 'mean':
-                    cp = np.mean(points, axis=0)  # center point of one tag
-                elif method == 'median':
-                    cp = np.median(points, axis=0)
-                center_points[name] = cp.tolist()
-
-        if plot:
-            p = pv.Plotter()
-            p.add_mesh(cm, clim=[-8, 0], below_color='grey')
-            p.add_mesh(pv.PolyData(np.array([np.array(e) for e in center_points.values()])), color='red', point_size=20)
-            p.show()
-        # return as dictionary, sorted by key so it's always in the same order
-        return OrderedDict(sorted(center_points.items()))
-
-
-def getBandsAroundRegions(case='OC59', k=1000, meshname='', location='../carto_meshes'):
-    """Returns a dict with as keys the regions and as values the indices of the closest
-    myocardial points to these regions
-    Indices correspond to input mesh(name)
-    Make sure the input mesh is aligned with the .vtk mesh"""
-    d = location + '/' + case + '/'
-    if meshname:
-        if '.csv' in meshname:
-            mesh = pv.PolyData(pd.read_csv(meshname)[['X', 'Y', 'Z']].values)
-            vtkmesh = pv.read(glob.glob(d + '*µm.1.vtk')[0])  # self-selected scar indices are encoded in vtk mesh
-        elif '.vtk' in meshname:
-            mesh = pv.read(meshname)
-        else:
-            assert os.path.isdir(meshname), "Mesh {} not found".format(meshname)
-            print("Mesh {} not of .csv or .vtk format")
-
-    regions = ['MV', 'LPV', 'RPV']
-    auto_detected = []
-    close_points = {}  # to return
-
-    for name in regions:  # manually selected tags in Scars/ directory
-        if not os.path.exists(d + 'Scars/{}.csv'.format(name)):
-            # If self-selected scar doesn't exist, assume it's because it's auto-detected
-            auto_detected.append(name)
-        else:  # manually selected scar region
-            scars = [e for e in glob.glob(d+'Scars/*.csv') if name in e]
-            for s in scars:
-                scar = pd.read_csv(s)
-                scar_ind = [e for e in range(len(mesh.points)) if e in scar['meshID'].values]
-                scar_ind = random.sample(scar_ind, len(scar_ind) // 10)
-                if '.vtk' in meshname:
-                    ind = [e for e in range(len(mesh.points)) if e not in scar['meshID'].values]
-                    cut_mesh = pv.PolyData(mesh.points[ind])  # cut away scar
-                    scar_mesh = pv.PolyData(mesh.points[scar_ind])
-                    cut_mesh['Id'] = ind
-                    tree = nb.KDTree(cut_mesh.points)
-                    dist, nbs = tree.query(scar_mesh.points, k=k)
-                    nbs = list(set(np.array(nbs).flatten()))
-                    nbs = cut_mesh['Id'][nbs]
-                elif '.csv' in meshname:
-                    scar_mesh = pv.PolyData(vtkmesh.points[scar_ind])
-                    # p = pv.Plotter()
-                    # p.add_mesh(mesh, color='white', opacity=.3)
-                    # p.add_mesh(scar_mesh, color='red')
-                    # p.show()
-                    tree = nb.KDTree(mesh.points)
-                    dist, nbs = tree.query(scar_mesh.points, k=k)
-                    nbs = list(set(np.array(nbs).flatten()))
-                close_points[name] = nbs
-
-    if len(auto_detected):  # not all regions were manually selected: some were present and functional in .mesh file
-        if case in ['OC52']:
-            tagdict = {'MV': [-8], 'LPV': [-5, -4], 'RPV': [-6, -7]}
-        else:
-            tagdict = {'MV': [-4], 'LPV': [-5], 'RPV': [-6]}
-        meshToCsv(glob.glob(d+'*.mesh')[0], meshdir=d, verbose=False)  # make tagged vtk file
-
-        cm = colorFromCsv(d)  # tagged (color) mesh
-        for name in auto_detected:  # tags present in CARTO .mesh file
-            t = tagdict[name]  # tag number
-            # indices of colored mesh that have tag t: scar
-            scar = [ind for ind, tag in zip(range(len(cm.points)), cm['color']) if tag == t]
-            # For each mesh point, find closest colored point
-            if '.vtk' in meshname:
-                tree = nb.KDTree(cm.points)
-                _, color_points = tree.query(mesh.points, k=1)
-                # color_points is now a list of length len(mesh.points) and each value refers to an
-                # index of colored mesh
-                color_points = np.array(color_points).flatten()
-                # colored mesh indices to vtk mesh indices
-                # only consider mesh points now that are close to colored point with tag t
-                scar = [i for i, e in enumerate(color_points) if e in scar]
-                # Split mesh into scar region and the rest
-                ind = [e for e in range(len(mesh.points)) if e not in scar]
-                scar_ind = [e for e in range(len(mesh.points)) if e in scar]
-                scar_ind = random.sample(scar_ind, len(scar_ind)//10)
-                scar_mesh = pv.PolyData(mesh.points[scar_ind])
-                cut_mesh = pv.PolyData(mesh.points[ind])  # cut away scar
-                cut_mesh['Id'] = ind  # save original indexing
-                tree = nb.KDTree(cut_mesh.points)
-                _, nbs = tree.query(scar_mesh.points, k=k)
-                nbs = list(set(np.array(nbs).flatten()))  # filter out double indices
-                nbs = cut_mesh['Id'][nbs]
-            elif '.csv' in meshname:
-                # csv files (based on simulation data) don't have scar regions in the mesh (no activation recorded)
-                # this gives a significant speedup
-                # flip around the two trees: f/e colored point, find k closest mesh points
-                # immediately find closest neighbors for the mesh
-                tree = nb.KDTree(mesh.points)
-                _, nbs = tree.query(cm.points[scar], k=k)
-                nbs = list(set(np.array(nbs).flatten()))  # filter out double indices
-                # p = pv.Plotter()
-                # p.add_mesh(mesh, color='white', opacity=.3)
-                # p.add_mesh(pv.PolyData(cm.points[scar]), color='red')
-                # p.show()
-
-            # p = pv.Plotter()
-            # p.add_mesh(mesh, color='white', opacity=.4, label='Mesh')
-            # p.add_mesh(pv.PolyData(mesh.points[nbs]), color=colors[2], label='Neighbors')
-            # # p.add_mesh(scar_mesh, color=colors[1], label='Scar')
-            # p.add_legend()
-            # p.show()
-            close_points[name] = nbs
-    return OrderedDict(sorted(close_points.items()))
-
-
-def transform(case='OC63', location='../carto_meshes', reference_case='OC45', plot=False, return_transformation=False, mesh=None,
-              reference_mesh=None, reference_cores=None):
-    """
-    Takes input mesh, calculates the cores of the anatomical object (LPV, RPV, MV), calculates the transformation
-    matrix between these three points and applies this transformation to all the mesh points.
-    :param case: input mesh to be transformed. Meshname is found automatically based on case number.
-    :param reference_case: name of reference mesh. Output mesh will look like this. Found automatically based on
-    case number
-    :param return_rot: if True, returns the Rotation object itself instead of the rotated mesh
-    """
-
-    if not mesh:
-        mesh_ = pv.read(glob.glob(location + '/' + case + '/*µm.1.vtk')[0])
-    else:
-        mesh_ = mesh
-
-    cores = list(getRegionCenters(case, method='median', location=location).values())
-    cores -= np.mean(cores, axis=0)
-    if reference_mesh is None:
-        refmesh = pv.read(glob.glob(location + '/'+reference_case+'/*µm.1.vtk')[0])
-    else:
-        refmesh = reference_mesh
-    if reference_cores is None:
-        refcores = list(getRegionCenters(reference_case, method='median', location=location).values())
-        refcores = np.array([p - np.mean(refcores, axis=0) for p in refcores])
-    else:
-        refcores = reference_cores
-
-    # transform based on anatomical region centers
-    R, _ = Rotation.match_vectors(refcores, cores, weights=[1, 2, 1])
-    m = np.mean(mesh_.points, axis=0)
-    if return_transformation:
-        return R, m
-    else:
-        mesh_ = pv.PolyData(np.array([p - m for p in mesh_.points]), mesh_.cells)
-        m2 = np.mean(refmesh.points, axis=0)
-        refmesh.points = np.array([np.array([p - m2])[0] for p in refmesh.points])
-        transf_cores = R.apply(cores)
-        transf_mesh = pv.PolyData(R.apply(mesh_.points), mesh_.faces)
-        if plot:
-            p = pv.Plotter()
-            p.add_mesh(transf_mesh, opacity=.2, color=colors[0], label='Aligned mesh: {}'.format(case),
-                       show_edges=False)
-            p.add_mesh(pv.PolyData(transf_cores), color=colors[0], point_size=25, label="Aligned cores")
-            p.add_mesh(mesh_, opacity=.05, color=colors[1], label='Unaligned mesh: {}'.format(case), show_edges=False)
-            p.add_mesh(pv.PolyData(cores), color=colors[1], point_size=25, label="Unaligned cores")
-            p.add_mesh(refmesh, opacity=.05, color='black', label='Reference mesh: {}'.format(reference_case),
-                       show_edges=False)
-            p.add_mesh(pv.PolyData(refcores), color='black', point_size=25, label="Reference cores")
-            p.background_color = "f0f0f0"
-            p.add_legend(bcolor=(240/255, 240/255, 240/255), size=(.25, .25))
-
-            # p.add_text('{} compared to {}'.format(case, reference_case))
-            p.show()
-
-        return transf_cores, transf_mesh
-
-
-if __name__ == '__main__':
-    transform(case='OC4', location='/media/bjorge/BACKUP/carto_meshes', plot=True)
