@@ -34,7 +34,6 @@ def convert(filename):  # pts meshfile to paraview csv
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    # fetching the arguments
     parser.add_argument('--filename',
                         help="name of .pts file, to be converted to paraview .csv (including relative directory)",
                         type=str, default="")

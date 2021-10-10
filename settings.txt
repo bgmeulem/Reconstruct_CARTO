@@ -1,2 +1,4 @@
 dgm_location = "~/Documents/Thesis/DGM"
-tetgen_location = "~/Documents/Thesis/Tools"  # should not be needed, as tetgen install includes aliasing 'tetgen' as used in tet.py
+tetgen_location = "~/Documents/Thesis/Tools"  # should not be needed, as tetgen install includes aliasing 'tetgen'
+
+# TODO: reconstruction and apply_cv settings can be defined here as well
