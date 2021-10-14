@@ -5,15 +5,17 @@ import time
 import glob
 import matplotlib.pyplot as plt
 import os
+
 plt.style.use('fivethirtyeight')
 colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six 'fivethirtyeight' themed colors
-
 
 
 class CartoMesh:
     """A class CartoMesh containing functions for initialising from file, plotting, reconstructing."""
 
-    def __init__(self):
+    def __init__(self, name: str = ""):
+        self.name = ""
+        self.dir = "./"
         self.point_info = pd.DataFrame()
         self.triangle_info = pd.DataFrame()
         self.points = np.array([])
@@ -26,12 +28,68 @@ class CartoMesh:
         self.layers = None
         self.mesh = None
         self.myo = self.non_myo = None
-        self.dir = ""
-        self.name = ""
         self.thickness = 0
         self.ratio = None
         self.verbose = False  # TODO: implement in other functions
         self.switches = "-pYkAmNEFq2.5/20a2e+6"
+        self.__initialiseFromFile(name)
+
+    def __initialiseFromFile(self, name: str = ""):
+        def parseName(fn):
+            comp = fn.split(os.sep) if fn else ['.']
+            if '.mesh' not in comp[-1] and '.vtk' not in comp[-1]:  # only directory given: look for file
+                fns = glob.glob(os.path.join(*comp, '*.mesh'))  # take first .mesh file
+                if len(fns):
+                    comp = fns[0].split(os.sep)  # overwrite filename and dir components
+                else:
+                    raise FileNotFoundError("No .mesh or .vtk file found in directory \'{}\'"
+                                            "".format(os.path.join(*comp)))
+            d = os.path.join(*comp[:-1]) + os.sep
+            n = comp[-1].split('.')[0]
+            return n, d
+
+        def initialiseFromMeshFile(self_, name_: str = "") -> None:
+            """Initialize a carto mesh from .mesh file.
+            Reads in a .mesh file and writes out a .csv file per .mesh header. Reads in the VerticesSection and
+            TrianglesSection and uses these to construct a mesh.
+            Args:
+                self_: self, the CartoMesh() object, passed through from the overarching function.
+                name_: name of .mesh file to be initialised, including '.mesh' extension
+            Returns:
+                None: Nothing. Updates mesh.
+            """
+            self_.name, self_.dir = parseName(name_)
+            self_.__cartoToCsv(verbose=False)
+            vert, tri = self_.__readVertTri()
+            self_.point_info = vert
+            self_.triangle_info = tri
+            points = np.array([[1000. * e for e in (x, y, z)]
+                               for x, y, z in self_.point_info[['X', 'Y', 'Z']].values])
+            triangles = self_.triangle_info[['Vertex0', 'Vertex1', 'Vertex2']].values
+            self_.layers = 1
+            self_.__update(pv.PolyData(points, pmToPvFaces(triangles)))
+            color = [e for e in self_.triangle_info['GroupID'].to_numpy()]
+            self_.mesh['color'] = color
+            self_.mesh = self_.mesh.ctp()  # triangle data to point data
+            self_.myo, self_.non_myo = self_.extractMyoAndNonMyo()
+
+        def initialiseFromVtkFile(self_, name_: str = "") -> None:
+            """Initialize a carto mesh from .vtk file.
+            Args:
+                self_: self_: self, the CartoMesh() object, passed through from the overarching function.
+                name_: name of .mesh file to be initialised, including '.vtk' extension
+            Returns:
+                None: Nothing. Updates mesh.
+            """
+
+            self_.name, self_.dir = parseName(name_)
+            self_.layers = 1
+            self_.__update(pv.read(self_.dir + self_.name+'.vtk'))
+
+        if '.vtk' in name:
+            initialiseFromVtkFile(self, name)
+        else:
+            initialiseFromMeshFile(self, name)
 
     def __cartoToCsv(self, verbose: bool = True):
         """Reads in a carto .mesh file and generates .csv files per header in real-time in the same directory"""
@@ -119,53 +177,12 @@ class CartoMesh:
             self.triangles = pvToPmCells(mesh_.faces)
             self.n_triangles = len(self.triangles)
             self.cells = None
-            self.n_cells = mesh_.n_cells
+            self.n_cells = 0
         elif type(mesh_) == pv.UnstructuredGrid:
             self.cells = pvToPmCells(mesh_.cells)
             self.n_cells = len(self.cells)
             self.triangles = None
-            self.n_triangles = mesh_.n_faces
-
-    def initialise(self, name: str = ""):
-        """Initialize a carto mesh from .mesh file.
-        Reads in a .mesh file and writes out a .csv file per .mesh header. Reads in the VerticesSection and
-        TrianglesSection and uses these to construct a mesh.
-        Args:
-            name: name of .mesh file to be initialised, including '.mesh' extension
-        Returns:
-            Nothing
-        Todo:
-            Add color to initial mesh
-        """
-
-        def parseName(fn):
-            comp = fn.split(os.sep) if fn else ['.']
-            if '.mesh' not in comp[-1]:  # only directory given: look for .mesh file
-                fns = glob.glob(os.path.join(*comp, '*.mesh'))
-                if len(fns):
-                    comp = fns[0].split(os.sep)  # overwrite filename and dir components
-                else:
-                    raise FileNotFoundError("No .mesh file found in directory \'{}\'".format(os.path.join(*comp)))
-            d = os.path.join(*comp[:-1]) + os.sep
-            n = comp[-1].split('.')[0]
-            return n, d
-
-        self.name, self.dir = parseName(name)
-        self.__cartoToCsv(verbose=False)
-        vert, tri = self.__readVertTri()
-        self.point_info = vert
-        self.triangle_info = tri
-        self.points = np.array([[1000. * e for e in (x, y, z)]
-                                for x, y, z in self.point_info[['X', 'Y', 'Z']].values])
-        self.n_points = len(self.points)
-        self.triangles = self.triangle_info[['Vertex0', 'Vertex1', 'Vertex2']].values
-        self.layers = 1
-        self.mesh = pv.PolyData(self.points, pmToPvFaces(self.triangles))
-        color = [e for e in self.triangle_info['GroupID'].to_numpy()]
-        self.mesh['color'] = color
-        self.mesh = self.mesh.ctp()  # triangle data to point data
-        self.myo, self.non_myo = self.extractMyoAndNonMyo()
-        self.edges = self.mesh.extract_all_edges()
+            self.n_triangles = 0
 
     def writeEndoEpi(self, thickness: float, ratio: float) -> None:
         """Reads in .csv files from carto2csv.py, calculates normals of mesh facets and adds two layers of points
@@ -268,7 +285,7 @@ class CartoMesh:
         self.triangle_info = pd.DataFrame()
         return mesh_
 
-    def getEdgeLengths(self, mesh=None) -> np.ndarray[float]:
+    def getEdgeLengths(self, mesh=None) -> np.ndarray:
         """Gets all edge lengths from a PyMesh mesh (used in homogenizeMesh())"""
         edges = mesh.extract_all_edges() if mesh else self.edges
         pmedges = pvToPmCells(edges.extract_cells(range(edges.n_cells)).cells)  # extract edge ind as cells
@@ -444,11 +461,47 @@ class CartoMesh:
             nc_mesh_ind = []
         return nc_mesh_ind
 
-    # This one works, but have to manually initialise mesh["speed'] first en set active scalar to "speed"
+    def writeAdjustNa2(self, tol: float = 1e-5, g_Na: float = 7.8, write_dat: bool = True) -> None:
+        """Writes adjustment file to close off Na2+ channels in cells where CV ~ 0
+        Args:
+            tol: tolerance for when a point is considered to have a conduction velocity of 0. Points whose conduction velocity < tol are considered to be zero.
+            g_Na: value for (maximum) Sodium channel conductance. Open Na-channels are set to this conductance. Default: 7.8 pS
+            write_dat: write a .dat file for visual inspection in e.g. meshalyzer.
+        Returns:
+            None: Nothing. Writes out a .txt file and, if wanted, a .dat file"""
+
+        def writeDat(d: str, mesh: pv.PolyData, name: str = "gNA2") -> None:
+            datfile = open(d + name + ".dat", "w+")
+            dat = np.zeros(mesh.n_points)
+            dat[ptn == 0.] = 1
+            for e in dat:
+                datfile.write(str(e) + '\n')
+            datfile.close()
+
+        assert self.mesh.cells or self.mesh.triangles, "Mesh does not contain any cells or triangles."
+        cells = pvToPmCells(self.mesh.cells) if self.cells else pvToPmCells(self.mesh.triangles)
+        speed = self.mesh["speed"]
+
+        ptn = np.ones(len(self.mesh.points)) * g_Na
+        for i in range(len(speed)):
+            if speed[i] < tol:  # if CV is ~ 0 -> close off Na channel
+                vertices = cells[i]
+                ptn[vertices] = 0.
+
+        stimfile = open(self.dir + "gNA2.adj", "w+")
+        stimfile.write(str(len(ptn)) + "\n" + "extra\n")
+        for i in range(len(ptn)):
+            stimfile.write(str(i) + " " + str(ptn[i]) + "\n")
+        stimfile.close()
+
+        if write_dat:
+            writeDat(self.dir, self.mesh, "gNA2")
+
     def applyManualNonCondRegions(self, region_dir='Regions', write_dat=False, index_col="MeshID") -> None:
-        """Opens directory 'Regions' and reads in the .csv files there.
-        Sets the conduction velocity to zero for all points with an index that's present in these .csv files
+        """Opens directory region_dir and reads in .csv files there. These .csv files should contain the indices of
+        points whose conduction velocity should be set to zero.
         Writes out a .dat file for each .csv file if wanted"""
+
         def writeDat(data: pd.DataFrame, n_points, name):
             """Writes a .dat file for a given pd.DataFrame"""
             # write scar .dat file
@@ -470,21 +523,21 @@ class CartoMesh:
                     for index in scar[index_col].values:
                         non_cond_region_indices.append(index)
             return np.array(non_cond_region_indices)
+
         # Set manually selected scars to 0 velocity
         scars = getNonCondRegions(self.dir, self.mesh, 'Regions')
         self.mesh["speed"] = [0. if p in scars else self.mesh["speed"][p] for p in range(self.n_points)]
 
-    # TODO: not tested. How to get a speed.csv? Extract from old vtk files?
-    def applyCV(self, speed_limit=(0, 1.4), speed_file='speed.csv',
-                radius=4000, sharpness=1.5,
-                write_csv=False, write_VTK_file=False, write_txt=True, write_dat=False, write_xyz=False, write_adj=False,
-                n_variations=10, n_neighbors=5,
+    def applyCV(self, cv_params=None, speed_file='speed.csv',
+                write_csv=False, write_VTK_file=False, write_txt=True, write_dat=False, write_xyz=False,
                 outdir='scale_factors/'):
 
-        def convertMmtoMicron(data_: pd.DataFrame, co_cols=('x', 'y', 'z')) -> pd.DataFrame:
-            for c in co_cols:
-                data_["{}_um".format(c)] = [1000. * e for e in data_[c]]
-            return data_
+        if cv_params is None:
+            cv_params = {'radius': 4000,  # for interpolation
+                         'sharpness': 1.5,  # for interpolation
+                         'n_variations': 1,
+                         'n_neighbors': 15,  # for randomization
+                         'speed_limit': (0, 1.4)}
 
         def applySpeedLimit(data_: pd.DataFrame, limit: tuple, speed_col: str = 'speed') -> pd.DataFrame:
             speeds = data_[speed_col]
@@ -492,43 +545,26 @@ class CartoMesh:
                 s = speeds[i]
                 if s < limit[0]:
                     speeds[i] = limit[0]
-                if s > speed_limit[1]:
+                if s > limit[1]:
                     speeds[i] = limit[1]
             data_[speed_col] = speeds
             return data_
 
-        def writeAdjust(meshdir, mesh) -> None:
-            """Writes adjustment file to close off Na2+ channels in cells where CV ~ 0"""
-            # mesh needs to be pyvista PolyData
-            # meshname = glob.glob(meshdir+"*.1.vtk")[0].split('.')[0]
-            cells = pvToPmCells(mesh.cells)  # mesh cells in PyMesh format
-            speed = mesh["speed"]
-
-            ptn = np.ones(len(mesh.points)) * 7.8  # default value for g_Na
-            for i in range(len(speed)):
-                if speed[i] < 1e-5:  # if CV is ~ 0 -> close off Na channel
-                    vertices = cells[i]
-                    ptn[vertices] = 0.
-
-            stimfile = open(meshdir + "gNA2.adj", "w+")
-            stimfile.write(str(len(ptn)) + "\n" + "extra\n")
-            for i in range(len(ptn)):
-                stimfile.write(str(i) + " " + str(ptn[i]) + "\n")
-            stimfile.close()
-
-            datfile = open(meshdir + "gNA2.dat", "w+")
-            dat = np.zeros(len(mesh.points))
-            dat[ptn == 0.] = 1
-            for e in dat:
-                datfile.write(str(e) + '\n')
-            datfile.close()
-
-        def randomizeCV(data: pd.DataFrame, speed_col: str = "speed") -> pd.DataFrame:
+        def randomizeCV(data_: pd.DataFrame, n_neighbors: int, speed_col: str = "speed") -> pd.DataFrame:
+            """Given a mesh with conduction velocities, makes a variation on this conduction velocity distribution.
+            A normal distribution is fitted to each point and their neighbors. From this distribution, a new
+            conduction velocity is randomly sampled.
+            Args:
+                data_: the mesh in pd.DataFrame format. Must contain columns 'x', 'y' and 'z' with the coordinates in µm.
+                n_neighbors: amount of neighbors to use for each normal distribution fitting.
+                speed_col: name of the column containing the conduction velocity values for each mesh point.
+            Returns:
+                pd.DataFrame: DataFrame containing the original point coordinates and updated conduction velocities"""
             print("\n\t#### Variation ", n)
             # tweak conduction velocities of input CV file
-            points = data[["x_um", "y_um", "z_um"]].values
+            points = data_[["x", "y", "z"]].values
             tree = nb.KDTree(points)
-            speeds = np.zeros(len(data))
+            speeds = np.zeros(len(data_))
             for i in tqdm(range(len(points)), desc='        Calculating new velocities'):
                 p = points[i]
                 dist, neighbors = tree.query([p], k=n_neighbors)
@@ -536,38 +572,32 @@ class CartoMesh:
                 mean, sigma = np.mean(neighborCVs), np.std(neighborCVs)
                 new_cv = np.random.normal(mean, sigma, 1)
                 speeds[i] = np.abs(new_cv)
-            data[speed_col] = speeds
-            return data
+            data_[speed_col] = speeds
+            return data_
 
         # read in data
         input_data = pd.read_csv(self.dir + speed_file,
-                                 usecols=["speed", "x", "y", "z"])  # TODO: needs to be present
-        input_data = convertMmtoMicron(input_data)  # TODO: depends on input file
-        input_data = applySpeedLimit(input_data, speed_limit)
+                                 usecols=["speed", "x", "y", "z"])
+        input_data = applySpeedLimit(input_data, cv_params['speed_limit'])
         med_speed = np.mean(input_data["speed"])
         # create new dataframe for mutable purposes
         calculated_data = input_data
 
-        ids = getGroupIds()  # Carto tags (excluding 0 and -10000): correspond to MV, LPV and RPV. At max 3
-        print("\tDetected tags (non-conductive): ", ids)
-        for n in range(n_variations):
+        for n in range(cv_params['n_variations']):
             if n != 0:  # variations of conduction velocities
-                calculated_data = randomizeCV(calculated_data)
+                calculated_data = randomizeCV(calculated_data, n_neighbors=cv_params['n_neighbors'])
 
             # Create PolyData to use in interpolation
-            data = applySpeedLimit(calculated_data, speed_limit)
-            pvdata = pv.PolyData(np.array([data["x_um"], data["y_um"], data["z_um"]]).T)
+            data = applySpeedLimit(calculated_data, cv_params['speed_limit'])
+            pvdata = pv.PolyData(np.array([data["x"], data["y"], data["z"]]).T)
             pvdata["speed"] = data["speed"]
 
             # Interpolate on mesh
             print("\tInterpolating on mesh")
-            mesh = self.mesh.interpolate(pvdata, radius=radius, sharpness=sharpness,
+            mesh = self.mesh.interpolate(pvdata, radius=cv_params['radius'], sharpness=cv_params['sharpness'],
                                          strategy="null_value", null_value=med_speed,
                                          pass_point_arrays=False, pass_cell_arrays=False)
 
-            # Set auto-detected non-conductive regions after interpolation
-            nc_mesh_ind = self.getNonMyoIndices()
-            mesh["speed"] = [0. if p in nc_mesh_ind else mesh["speed"][p] for p in range(mesh.n_points)]
             pointdata = mesh["speed"]
             mesh = mesh.ptc()  # point data to cell data
             cell_data = mesh["speed"]
@@ -575,6 +605,8 @@ class CartoMesh:
             sq_cell_data = pd.DataFrame([e ** 2 for e in cell_data], columns=["squared speed"])
             self.__update(mesh)
 
+            if not os.path.exists(self.dir + outdir):
+                os.mkdir(self.dir + outdir)
             # write to csv file
             if write_csv:
                 print("\tWriting squared speed to csv")
@@ -609,22 +641,10 @@ class CartoMesh:
                     of.write(str(e) + '\n')
                 of.close()
 
-            if write_adj:
-                print("\tWriting file: gNA2.adj")
-                writeAdjust(self.dir, mesh)
-
             # write to vtk for inspection in paraview
             if write_VTK_file:
-                print("\tWriting mesh to {}_CV{}.vtk".format(self.dir.split('.')[0], n))
-                polyd = pv.UnstructuredGrid(mesh.cells, np.array(len(pvToPmCells(mesh.cells)) * [10]), mesh.points)
-                polyd["speed"] = cell_data
-                pv.save_meshio(self.dir + "{}_CV{}.vtk".format(self.dir.split('.')[0], n), mesh)
-
-            if len(ids) < 3:
-                # don't calculate variations if you have to recalculate again with manual scars
-                print("\n\t!!! Only {} out of 3 tag(s) found - Manual input needed !!!\n".format(len(ids)))
-                print("\tVariations of CVs will not be calulated")
-                break
+                print("\tWriting mesh to {}{}_CV{}.vtk".format(self.dir, self.name, n))
+                pv.save_meshio(self.dir + "{}_CV{}.vtk".format(self.name, n), self.mesh)
 
     def reconstruct(self, boxplot=False,
                     switches="-pYkAmNEFq2.5/20a2e+6", refine_steps=10,
@@ -636,6 +656,7 @@ class CartoMesh:
         DGM.
 
         Args:
+          ncv: amount of conduction velocity distributions to make. The first one corresponds to the original distribution.
           min_edge: The desired value for the shortest mesh edge length in µm
           max_edge: The desired value for the longest mesh edge length in µm
           refine_steps: Amount of times the mesh edges will be split and collapsed in homogenizeMesh()
@@ -693,20 +714,27 @@ class CartoMesh:
                              ofmt='vtk')  # Make sure .vtk file is same as carp file after cleaning
         step += 1
 
-        # TODO:
-        # if ncv:
-        #     print("\n---- {}. Applying conduction velocities\n".format(step))
-        #     applyCV(self.dir, self.name + '.1.vtk', write_VTK_file=True, n_variations=ncv)
-        #     step += 1
+        if ncv:
+            print("\n---- {}. Applying conduction velocities\n".format(step))
+            cv_params = {'radius': 4000,  # for interpolation
+                         'sharpness': 1.5,  # for interpolation
+                         'n_variations': ncv,
+                         'n_neighbors': 15,  # for randomization
+                         'speed_limit': (0, 1.4)}
+            self.applyCV(cv_params=cv_params, write_VTK_file=True)
+            step += 1
 
         if not keep_intmed:  # delete intermediate files
             print("\n----- {}. Deleting intermediate files\n".format(step))
             # remove intermediate files that weren't present before generating and aren't the .vtk file
-            to_delete = ["mid.txt", "endo.txt", "epi.txt", "TrianglesSection.csv", "VerticesSection.csv",
+            # TODO: remove all files
+            to_delete = ["mid.txt", "endo.txt", "epi.txt", self.dir+"TrianglesSection.csv",
+                         self.dir+"VerticesSection.csv",
                          self.name + ".smesh", self.name + '.mtr', self.name + '.1.mtr', self.name + '.1.p2t',
                          self.name + '.1.node', self.name + '.1.edge',
-                         self.name + '.1.face', self.name + '.1.ele', 'VerticesAttributesSection.csv',
-                         'VerticesColorsSection.csv', 'myo.csv', 'noncond.csv', 'Surface.stl']
+                         self.name + '.1.face', self.name + '.1.ele',
+                         self.dir+'VerticesAttributesSection.csv',
+                         self.dir+'VerticesColorsSection.csv', 'myo.csv', 'noncond.csv', 'Surface.stl']
             for trash in to_delete:
                 if glob.glob(trash):
                     os.remove(trash)
@@ -725,6 +753,5 @@ class CartoMesh:
 
 
 if __name__ == '__main__':
-    m = CartoMesh()
-    m.initialise('BlankMeshes/OC59')
+    m = CartoMesh('BlankMeshes/OC59')
     m.reconstruct()
