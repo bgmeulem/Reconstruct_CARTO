@@ -315,11 +315,12 @@ def convertMesh_Meshtool(meshname, ifmt='vtk', ofmt='carp_txt'):
                     break
 
 
-def ptsToParaview(filename: str):  # .pts meshfile to paraview csv
+def ptsToParaview(filename: str, column_name: str = "meshID") -> None:  # .pts meshfile to paraview csv
     """
     Takes a pts file, adds point ID as extra data to each point, writes out to csv file
     Args:
       filename: Name of .pts file (including '.pts' extension) to be converted to paraview-friendly format
+      column_name: Name of the column to contain the mesh indices.
     """
 
     ofname = filename.split(".")[0]
@@ -328,7 +329,7 @@ def ptsToParaview(filename: str):  # .pts meshfile to paraview csv
 
     print('\n\tWriting {}_paraview.csv'.format(ofname))
     # csv header
-    outfile.write("X,Y,Z,meshID\n")
+    outfile.write("X,Y,Z,{}\n".format(column_name))
     i = 0
     for line in tqdm(df.readlines()[1:], desc='        '):
         for e in line[:-2].split():  # x, y or z co-ordinate
@@ -338,7 +339,6 @@ def ptsToParaview(filename: str):  # .pts meshfile to paraview csv
 
     outfile.close()
     df.close()
-    return 0
 
 
 def vtkToStl(vtk_mesh, location, meshname):

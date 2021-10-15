@@ -4,8 +4,7 @@ Reconstructs a simulatable 3D mesh from CARTO data
 # Usage
 ```
 from carto_mesh import *
-m = CartoMesh()
-m.initialise('filename.mesh')
+m = CartoMesh('filename.mesh')
 m.reconstruct()
 ```
 

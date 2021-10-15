@@ -4,6 +4,7 @@ from tqdm import tqdm
 import time
 import glob
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 import os
 
 plt.style.use('fivethirtyeight')
@@ -11,7 +12,8 @@ colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six 'fivethirtyeig
 
 
 class CartoMesh:
-    """A class CartoMesh containing functions for initialising from file, plotting, reconstructing."""
+    """A class containing functions for initialising from file, plotting, reconstructing and
+    applying conduction velocities."""
 
     def __init__(self, name: str = ""):
         self.name = ""
@@ -30,7 +32,6 @@ class CartoMesh:
         self.myo = self.non_myo = None
         self.thickness = 0
         self.ratio = None
-        self.verbose = False  # TODO: implement in other functions
         self.switches = "-pYkAmNEFq2.5/20a2e+6"
         self.__initialiseFromFile(name)
 
@@ -84,7 +85,7 @@ class CartoMesh:
 
             self_.name, self_.dir = parseName(name_)
             self_.layers = 1
-            self_.__update(pv.read(self_.dir + self_.name+'.vtk'))
+            self_.__update(pv.read(self_.dir + self_.name + '.vtk'))
 
         if '.vtk' in name:
             initialiseFromVtkFile(self, name)
@@ -295,8 +296,8 @@ class CartoMesh:
             distances.append(dist(co1, co2))
         return np.array(distances)
 
-    def homogenizeMesh(self, nsteps=10, boxplot=False, plot_mesh=False, verbose=False, return_dist=False,
-                       min_edge=500., max_edge=1000.) -> pv.PolyData:
+    def homogenizeMesh(self, nsteps=10, boxplot=False, return_dist=False,
+                       edge_range=(500., 1000.)) -> pv.PolyData:
         """ Iteratively splits long edges and collapses short edges until they all have a length between
         min_edge and max_edge"""
 
@@ -305,7 +306,7 @@ class CartoMesh:
         # at least twice as big as tolerance. Setting max_edge < 2 * min_edge wastes some
         # computational time, but can be useful in case the input mesh has self-intersections.
 
-        # TODO: clean this
+        min_edge, max_edge = edge_range
 
         def calcAlpha(n_, nsteps_, max_edge_, longest_edge_):
             """Calculate the longest allowed edge length (alpha) for a given iteration step.
@@ -379,10 +380,10 @@ class CartoMesh:
         print("\tCleaning mesh...")
         mesh_ = cleanMesh(makePyVista(mesh_), tol=min_edge / 2, iter=6)
         self.__update(mesh_)
+        self.name += '_{}-{}µm'.format(int(min_edge), int(max_edge))  # update name
 
         if return_dist:
             return mesh_, getEdgeLengths(makePyMesh(mesh_))
-        self.name += '_{}-{}µm'.format(int(min_edge), int(max_edge))  # update name
         return mesh_  # return final version of mesh
 
     def tetrahedralise(self, switches: str, n_col=3) -> None:
@@ -392,6 +393,8 @@ class CartoMesh:
                 switches: Switches to be used together with TetGen bash command.
             Returns:
                 """
+            cwd = os.getcwd()
+            os.chdir(self.dir)
             tetcommand = "tetgen {} {}.smesh".format(switches, name)
             command = ['stdbuf', '-o0', *tetcommand.split(" ")]
             print('\tNow running bash command {}\n'.format(" ".join(command)))
@@ -415,6 +418,7 @@ class CartoMesh:
                     colin_pair.append([edge1, edge2])
                 p.stdout.flush()
             print("\t------------------ End TetGen output ------------------")
+            os.chdir(cwd)
             return colin_pair
 
         colinear_pairs = runTetGen(name=self.name, switches=switches)
@@ -423,7 +427,7 @@ class CartoMesh:
         while i < n_col and len(colinear_pairs) > 0:  # check for collinear pairs
             print("\n\tCollinearity found! Adapting points...")
             mesh = makeNonCollinear(mesh, colinear_pairs)
-            writeToSmesh(mesh, self.name)
+            writeToSmesh(mesh, self.dir + self.name)
             colinear_pairs = runTetGen(self.name, switches)
             i += 1
 
@@ -497,10 +501,13 @@ class CartoMesh:
         if write_dat:
             writeDat(self.dir, self.mesh, "gNA2")
 
-    def applyManualNonCondRegions(self, region_dir='Regions', write_dat=False, index_col="MeshID") -> None:
+    def setNonCondByIndexFiles(self, region_dir='Regions', write_dat=False, index_col="meshID") -> None:
         """Opens directory region_dir and reads in .csv files there. These .csv files should contain the indices of
         points whose conduction velocity should be set to zero.
-        Writes out a .dat file for each .csv file if wanted"""
+        Writes out a .dat file for each .csv file if wanted
+        Args:
+            region_dir: Name of directory containing the regions to be set to a conduction velocity of 0. These regions should be .csv files containing the indices of points to be set to CV=0
+            index_col: Name of the column in the .csv files that contain the point indices. Default=\"meshID\" for easy workflow in correspondence with mesh_tools.ptsToParaview()"""
 
         def writeDat(data: pd.DataFrame, n_points, name):
             """Writes a .dat file for a given pd.DataFrame"""
@@ -649,7 +656,7 @@ class CartoMesh:
     def reconstruct(self, boxplot=False,
                     switches="-pYkAmNEFq2.5/20a2e+6", refine_steps=10,
                     keep_intmed=False,
-                    min_edge=700., max_edge=1400., ncv=1, n_col=1) -> None:
+                    edge_range=(600., 1000.), ncv=1, n_col=1) -> None:
         """Reads in .mesh file and writes out a refined tetrahedron mesh in .vtk format and carp format.
         If 'speed.csv' exists in the cwd, also interpolates these speeds on the mesh. speed.csv should be a csv file with
         columns 'x', 'y', 'z' and 'speed', where the xyz coordinates refer to point coordinates. Can be calculated with
@@ -657,8 +664,7 @@ class CartoMesh:
 
         Args:
           ncv: amount of conduction velocity distributions to make. The first one corresponds to the original distribution.
-          min_edge: The desired value for the shortest mesh edge length in µm
-          max_edge: The desired value for the longest mesh edge length in µm
+          edge_range: The desired values for the shortest and longest mesh edge length in µm
           refine_steps: Amount of times the mesh edges will be split and collapsed in homogenizeMesh()
           switches: The switches used in the TetGen command to tetrahedralize a mesh.
           boxplot: Keep track of the edge length distribution during homogenizeMesh() and plot a boxplot afterwards.
@@ -673,77 +679,86 @@ class CartoMesh:
 
         """
 
+        def getPipeline(self_, boxplot_, switches_, refine_steps_, edge_range_, ncv_, n_col_):
+            pipeline_ = OrderedDict([
+                (
+                    "Adding endo and epi point layers",
+                    {'function': [self_.splitLayer],
+                     'args': [{}]}
+                ),
+                (
+                    "Refining surface mesh",
+                    {'function': [self_.homogenizeMesh],
+                     'args': [{'nsteps': refine_steps_, 'boxplot': boxplot_, 'edge_range': edge_range_}]}
+
+                ),
+                (
+                    "Writing to .smesh",
+                    {'function': [writeToSmesh],
+                     'args': [{'mesh': self_.mesh, 'name': self_.dir + self_.name}]}
+                ),
+                (
+                    "Tetrahedralising with TetGen",
+                    {'function': [self_.tetrahedralise],
+                     'args': [{'switches': switches_, 'n_col': n_col_}]}
+                ),
+                (
+                    "Converting to carp and paraview-friendly format",
+                    {'function': [convertMesh_Meshtool, ptsToParaview],
+                     'args': [{'meshname': self_.dir + self_.name},
+                              {'filename': self_.dir + self_.name + '.pts', 'column_name': 'meshID'}]}
+                ),
+                (
+                    "Cleaning with meshtool",
+                    {'function': [cleanMesh_Meshtool, convertMesh_Meshtool],
+                     'args': [{'meshname': self_.dir + self_.name, 'threshold': .2},
+                              {'meshname': self_.dir + self_.name, 'ifmt': 'carp_txt', 'ofmt': 'vtk'}]}
+                )
+            ])
+            if ncv_:
+                cv_params = {'radius': 4000,  # for interpolation
+                             'sharpness': 1.5,  # for interpolation
+                             'n_variations': ncv_,
+                             'n_neighbors': 15,  # for randomization
+                             'speed_limit': (0, 1.4)}
+                pipeline_.update({"Applying conduction velocities":
+                                     {'function': [self.applyCV],
+                                      'args': [{'cv_params': cv_params, 'write_VTK_file': True}]
+                                      }
+                                  })
+            return pipeline_
+
         print("\n####### Creating 3D tetrahedralized {}\n".format(self.name))
-
-        step = 1  # progress
         start = time.time()
-
-        # Read in the meshes
-        if not all(
-                [os.path.exists(os.path.join(self.dir, e)) for e in ('VerticesSection.csv', 'TrianglesSection.csv')]):
-            print("---- {}. Reading CARTO .mesh file and writing to csv\n".format(step))
-            self.__cartoToCsv()
-            step += 1
-
-        # Add second layer of points and triangles
-        print("\n---- {}. Adding endo and epi point layers\n".format(step))
-        self.splitLayer()
-        step += 1
-
-        # Refine, make .smesh file
-        self.homogenizeMesh(nsteps=refine_steps, boxplot=boxplot, min_edge=min_edge, max_edge=max_edge)
-        writeToSmesh(self.mesh, self.name)
-        # create_surface adapted filename to form: basefilename + "_<minedge>-<maxedge>µm"
-        step += 1
-
-        # Make tetrahedrons from double-layered refined surface mesh
-        self.tetrahedralise(switches=switches, n_col=n_col)
-        step += 1
-        print('\n\tTetrahedralizing done.')
-
-        print("\n---- {}. Converting to carp and paraview-friendly format\n".format(step))
-        convertMesh_Meshtool(self.name)  # by default vtk to carp_txt
-        # pts2paraview.convert(fn + '.pts')
-        step += 1
-
-        # clean created mesh
-        print("\n---- {}. Cleaning with meshtool\n".format(step))
-        cleanMesh_Meshtool(self.name, .2)
-        print('\n\tAdapting .vtk ...')
-        convertMesh_Meshtool(self.name, ifmt='carp_txt',
-                             ofmt='vtk')  # Make sure .vtk file is same as carp file after cleaning
-        step += 1
-
-        if ncv:
-            print("\n---- {}. Applying conduction velocities\n".format(step))
-            cv_params = {'radius': 4000,  # for interpolation
-                         'sharpness': 1.5,  # for interpolation
-                         'n_variations': ncv,
-                         'n_neighbors': 15,  # for randomization
-                         'speed_limit': (0, 1.4)}
-            self.applyCV(cv_params=cv_params, write_VTK_file=True)
+        step = 1
+        pipeline = getPipeline(self, boxplot, switches, refine_steps, edge_range, ncv, n_col)
+        for action_name in pipeline:
+            print("\n---- {}. {}\n".format(step, action_name))
+            action = pipeline[action_name]
+            for func, args in zip(action['function'], action['args']):
+                func(**args)
+            # Reinitialise pipeline dict to update function arguments
+            pipeline = getPipeline(self, boxplot, switches, refine_steps, edge_range, ncv, n_col)
             step += 1
 
         if not keep_intmed:  # delete intermediate files
             print("\n----- {}. Deleting intermediate files\n".format(step))
             # remove intermediate files that weren't present before generating and aren't the .vtk file
-            # TODO: remove all files
-            to_delete = ["mid.txt", "endo.txt", "epi.txt", self.dir+"TrianglesSection.csv",
-                         self.dir+"VerticesSection.csv",
-                         self.name + ".smesh", self.name + '.mtr', self.name + '.1.mtr', self.name + '.1.p2t',
-                         self.name + '.1.node', self.name + '.1.edge',
-                         self.name + '.1.face', self.name + '.1.ele',
-                         self.dir+'VerticesAttributesSection.csv',
-                         self.dir+'VerticesColorsSection.csv', 'myo.csv', 'noncond.csv', 'Surface.stl']
+            to_delete = ["mid.txt", "endo.txt", "epi.txt",
+                         "TrianglesSection.csv", "VerticesSection.csv", 'VerticesAttributesSection.csv',
+                         'VerticesColorsSection.csv',
+                         self.name + ".smesh", self.name + '.1.mtr', self.name + '.1.mtr', self.name + '.1.p2t',
+                         self.name + '.1.node', self.name + '.1.edge', self.name + '.1.face', self.name + '.1.ele',
+                         'myo.csv', 'noncond.csv']
             for trash in to_delete:
-                if glob.glob(trash):
-                    os.remove(trash)
+                if os.path.exists(self.dir+trash):
+                    os.remove(self.dir+trash)
                     print("\tDeleted ", trash)
             step += 1
 
         duration = time.time() - start
         print("\n\tMesh reconstructed in {0}m {1:.2f}s".format(int(duration // 60), duration % 60))
-        self.__update(pv.read(self.name + '.1.vtk'))
+        self.__update(pv.read(self.dir+self.name + '.1.vtk'))
 
     def plot(self):
         """Plots the mesh in its current state using PyVista's Plotter() method."""
