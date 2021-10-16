@@ -1,7 +1,7 @@
 # Reconstruct_CARTO
 Reconstructs a simulatable 3D mesh from CARTO data
 
-![hippo](https://preview.redd.it/i0lgruhmivt71.gif?format=mp4&s=ed50e6e433c0a3e825f795dcfc73748a017c0dc0)
+![hippo(https://media0.giphy.com/media/bZM2OaOQb4HCVymzna/giphy.gif?cid=790b76112533f1a2f99b476d6833aa55d4b4c8ef9e3227b2&rid=giphy.gif&ct=g)
 
 # Usage
 ```
