@@ -20,7 +20,7 @@ directory as the mesh called "speed.csv" with the calculated speeds and column n
 - tetgen 1.6.0 (version is important as output gets caught and interpreted)
 - If finished: DGM for calculating CVs (currently not used)
 - PyVista 0.27.3
-- PyMesh 0.3
+- [PyMesh 0.3](https://pymesh.readthedocs.io/en/latest/installation.html)
 # Python module dependencies
 - sklearn.neighbors
 - subprocess
