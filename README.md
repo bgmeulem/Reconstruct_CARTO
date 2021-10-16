@@ -2,7 +2,7 @@
 Reconstructs a simulatable 3D mesh from CARTO data
 
 <p align="center">
-<img src=![hippo](https://media0.giphy.com/media/bZM2OaOQb4HCVymzna/giphy.gif?cid=790b76112533f1a2f99b476d6833aa55d4b4c8ef9e3227b2&rid=giphy.gif&ct=g />)
+<img src=![hippo](https://media0.giphy.com/media/bZM2OaOQb4HCVymzna/giphy.gif?cid=790b76112533f1a2f99b476d6833aa55d4b4c8ef9e3227b2&rid=giphy.gif&ct=g) />
 </p>
 
 
