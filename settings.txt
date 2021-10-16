@@ -1,7 +1,7 @@
 dgm_location = "~/Documents/Thesis/DGM"
 tetgen_location = "~/Documents/Thesis/Tools"  # should not be needed, as tetgen install includes aliasing 'tetgen'
 
-# Reconstruction Parameters
+## Reconstruction Parameters
 TETGEN_SWITCHES =   pYkAmNEFq2.5/20a2e+6
 REFINE_STEPS    =   10
 KEEP_INTMED     =   False
@@ -10,10 +10,9 @@ N_CV            =   1
 N_COL_RETRY     =   1
 BOXPLOT         =   False
 
-# CV Interpolation Parameters
+## CV Interpolation Parameters
 RADIUS          =   4000
 SHARPNESS       =   1.5
 N_VARIATIONS    =   1  # TODO: same as N_CV in reconstruction parameters
 N_NEIGHBORS     =   15
 SPEED_LIMIT     =   0 - 1.4
-# TODO: parse these settings

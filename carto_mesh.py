@@ -32,8 +32,10 @@ class CartoMesh:
         self.myo = self.non_myo = None
         self.thickness = 0
         self.ratio = None
-        self.switches = "-pYkAmNEFq2.5/20a2e+6"
+        self.reconstruction_parameters = {}
+        self.cv_interpolation_parameters = {}
         self.__initialiseFromFile(name)
+        self.__parseSettings()
 
     def __initialiseFromFile(self, name: str = ""):
         def parseName(fn):
@@ -91,6 +93,7 @@ class CartoMesh:
             initialiseFromVtkFile(self, name)
         else:
             initialiseFromMeshFile(self, name)
+
 
     def __cartoToCsv(self, verbose: bool = True):
         """Reads in a carto .mesh file and generates .csv files per header in real-time in the same directory"""
@@ -769,4 +772,4 @@ class CartoMesh:
 
 if __name__ == '__main__':
     m = CartoMesh('BlankMeshes/OC59')
-    m.reconstruct()
+    # m.reconstruct()
