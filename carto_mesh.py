@@ -94,6 +94,29 @@ class CartoMesh:
         else:
             initialiseFromMeshFile(self, name)
 
+    def __parseSettings(self):
+        # TODO: this should be more straightforward
+        def fillSetting(settings_file, category_name: str = "Reconstruction"):
+            to_return = {}
+            for cat in settings_file:
+                if category_name in cat:
+                    cat_ = cat.split('\n')[1:]
+                    cat_ = [e for e in cat_ if e]  # remove empty lines
+                    for setting in cat_:
+                        setting = setting.split("#")[0]
+                        setting_name, setting_val = [e.strip() for e in setting.split('=')]
+                        if '-' in setting_val:
+                            setting_val = [e.strip() for e in setting_val.split('-')]
+                        to_return[setting_name] = setting_val
+            return to_return
+        assert os.path.exists("settings.txt"), "\'settings.txt\' not found"
+        s = open('settings.txt').read()
+        s = s.split('##')
+        self.reconstruction_parameters = fillSetting(s, "Reconstruction")
+        self.cv_interpolation_parameters = fillSetting(s, "CV Interpolation Parameters")
+
+        # print(self.reconstruction_parameters)
+        # print(self.cv_interpolation_parameters)
 
     def __cartoToCsv(self, verbose: bool = True):
         """Reads in a carto .mesh file and generates .csv files per header in real-time in the same directory"""
