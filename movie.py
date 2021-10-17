@@ -1,3 +1,4 @@
+"""File containing functions to make gif frames showing the mesh transitions."""
 from carto_mesh import *
 
 
