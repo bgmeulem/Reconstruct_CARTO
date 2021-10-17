@@ -1,12 +1,9 @@
 from typing import Tuple
 from mesh_tools import *
-from tqdm import tqdm
 import time
-import glob
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 import configparser
-import os
 
 plt.style.use('fivethirtyeight')
 colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six 'fivethirtyeight' themed colors
@@ -771,4 +768,4 @@ class CartoMesh:
 
 if __name__ == '__main__':
     m = CartoMesh('BlankMeshes/OC59')
-    # m.reconstruct()
+    m.reconstruct()
