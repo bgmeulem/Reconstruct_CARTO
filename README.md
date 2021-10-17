@@ -21,7 +21,8 @@ directory as the mesh called "speed.csv" with the calculated speeds and column n
 - PyVista 0.27.3
 - [PyMesh 0.3](https://pymesh.readthedocs.io/en/latest/installation.html)
 # Python module dependencies
--tqdm
+
+- tqdm
 - time
 - glob
 - matplotlib.pyplot
