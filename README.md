@@ -1,6 +1,11 @@
 # Reconstruct_CARTO
 Reconstructs a simulatable 3D mesh from CARTO data
 
+<p align="center">
+<img src=https://media0.giphy.com/media/bZM2OaOQb4HCVymzna/giphy.gif?cid=790b76112533f1a2f99b476d6833aa55d4b4c8ef9e3227b2&rid=giphy.gif&ct=g />
+</p>
+
+
 # Usage
 ```
 from carto_mesh import *
@@ -15,7 +20,7 @@ directory as the mesh called "speed.csv" with the calculated speeds and column n
 - tetgen 1.6.0 (version is important as output gets caught and interpreted)
 - If finished: DGM for calculating CVs (currently not used)
 - PyVista 0.27.3
-- PyMesh 0.3
+- [PyMesh 0.3](https://pymesh.readthedocs.io/en/latest/installation.html)
 # Python module dependencies
 - sklearn.neighbors
 - subprocess
