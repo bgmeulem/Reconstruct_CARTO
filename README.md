@@ -17,11 +17,14 @@ If you want to apply conduction velocities, you should have a .csv file in the s
 directory as the mesh called "speed.csv" with the calculated speeds and column names "x,y,z,speed".
 
 # Dependencies:
-- tetgen 1.6.0 (version is important as output gets caught and interpreted)
-- PyVista 0.27.3
-- [PyMesh 0.3](https://pymesh.readthedocs.io/en/latest/installation.html)
-# Python module dependencies
+- [tetgen 1.6.0](http://www.wias-berlin.de/software/index.jsp?id=TetGen&lang=1#Download) ([Download here](http://www.wias-berlin.de/software/tetgen/download2.jsp))
+- [PyVista 0.27.3 or up](https://docs.pyvista.org/getting-started/index.html) (```ṕip install pyvista```)
+- [PyMesh 0.3](https://pymesh.readthedocs.io/en/latest/index.html) ([Download here](https://pymesh.readthedocs.io/en/latest/installation.html))
+  - Do NOT install with pip. This is another module with the same name.
+  - dependency [Triangle](http://www.cs.cmu.edu/~quake/triangle.html) is required
+  - other dependencies are recommended
 
+# Python module dependencies
 - tqdm
 - time
 - glob

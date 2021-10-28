@@ -363,8 +363,8 @@ class CartoMesh:
                 plt.tight_layout(pad=1.8, h_pad=1.8)
                 ax.fill((.5, nsteps + 1.5, nsteps + 1.5, .5), (max_edge, max_edge, min_edge, min_edge), color=colors[0],
                         alpha=.3, label='Desired edgelength\n({} - {} µm)'.format(min_edge, max_edge))
-                # plt.axhline(max_edge, color='black', lw=2.5)
-                # plt.axhline(min_edge, color='black', lw=2.5)
+                plt.axhline(max_edge, color='black', lw=2.5)
+                plt.axhline(min_edge, color='black', lw=2.5)
                 polygonx = [.88] + list(range(2, nsteps + 2)) + list(reversed(range(2, nsteps + 2))) + [.88]
                 polygony = [m + s for m, s in zip(means, sigmas)] + \
                            list(reversed([m - s for m, s in zip(means, sigmas)]))
@@ -389,7 +389,7 @@ class CartoMesh:
 
             plotEdgelengths(dist_range)
         print("\tCleaning mesh...")
-        mesh_ = cleanMesh(makePyVista(mesh_), tol=min_edge/3., iter=6)
+        mesh_ = cleanMesh(makePyVista(mesh_), tol=min_edge / 3., iter=6)
         self.__update(mesh_)
         self.name += '_{}-{}µm'.format(int(min_edge), int(max_edge))  # update name
 
