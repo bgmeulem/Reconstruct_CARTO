@@ -1,7 +1,0 @@
-apply\_cv module
-================
-
-.. automodule:: settings
-   :members:
-   :undoc-members:
-   :show-inheritance:
