@@ -1,5 +1,5 @@
 # Reconstruct_CARTO
-Reconstructs a simulatable 3D mesh from clinical CARTO mapping data, providing control over mesh resolution, 
+This repository provides code capable of reconstructing a simulatable 3D mesh from clinical CARTO mapping data, providing control over mesh resolution, 
 conduction velocity distributions and non-conductive regions.
 
 <p align="center">
@@ -52,4 +52,4 @@ CartoMesh class and its dependencies.
 ```
 
 # Documentation
-Documentation can be found locally [here](docs/_build/html/index.html)
+Documentation can be found [here](https://bgmeulem.github.io/Reconstruct_CARTO/html/index.html)
