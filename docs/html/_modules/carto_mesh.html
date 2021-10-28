@@ -49,8 +49,8 @@
 <span></span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">This file contains the class CartoMesh with all its reconstruction-specific methods.</span>
 <span class="sd">This class contains methods for initialising from a .mesh file, plotting, reconstructing and applying conduction velocities.</span>
-<span class="sd">This file imports mesh_tools.py for all general mesh functions that are not specific to carto meshes.</span>
-<span class="sd">mesh_tools.py also concerns itself with all python imports.</span>
+<span class="sd">This file imports :mod:`mesh_tools` for all general mesh functions that are not specific to carto meshes.</span>
+<span class="sd">:mod:`mesh_tools` also concerns itself with all python module imports.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">mesh_tools</span> <span class="kn">import</span> <span class="o">*</span>
 
@@ -569,7 +569,7 @@
             <span class="n">plotEdgelengths</span><span class="p">(</span><span class="n">dist_range</span><span class="p">)</span>
 
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Cleaning mesh...&quot;</span><span class="p">)</span>
-        <span class="n">mesh_</span> <span class="o">=</span> <span class="n">cleanMesh</span><span class="p">(</span><span class="n">makePyVista</span><span class="p">(</span><span class="n">mesh_</span><span class="p">),</span> <span class="n">tol</span><span class="o">=</span><span class="n">min_edge</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+        <span class="n">mesh_</span> <span class="o">=</span> <span class="n">cleanMesh</span><span class="p">(</span><span class="n">makePyVista</span><span class="p">(</span><span class="n">mesh_</span><span class="p">),</span> <span class="n">tol</span><span class="o">=</span><span class="n">min_edge</span> <span class="o">/</span> <span class="mf">3.</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__update</span><span class="p">(</span><span class="n">mesh_</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+=</span> <span class="s1">&#39;_</span><span class="si">{}</span><span class="s1">-</span><span class="si">{}</span><span class="s1">µm&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">min_edge</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">max_edge</span><span class="p">))</span>  <span class="c1"># update name</span>
 

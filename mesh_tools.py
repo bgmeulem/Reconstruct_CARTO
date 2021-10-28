@@ -1,5 +1,7 @@
-"""This file contains a selection of useful vector operations and mesh operations such as io, cleaning, converting etc.
-This file is imported by carto_mesh.py"""
+"""
+This file contains a selection of useful vector operations and mesh operations such as io, cleaning, converting etc.
+This file is imported by :mod:`carto_mesh`.
+"""
 import pyvista as pv
 import numpy as np
 from typing import Tuple, List, Union
@@ -24,14 +26,32 @@ colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six 'fivethirtyeig
 G_REGION = 1107558400  # Carto ID for conductive region
 
 
-def normalize(vector):
+def normalize(vector: Union[np.ndarray, List, Tuple]) -> List:
+    """
+    Normalizes a vector such that its length equals 1.
+
+    Args:
+        vector: A 1xN array containing the vector components.
+
+    Returns:
+        List: the normalized vector
+    """
     return [e / np.sqrt(np.dot(vector, vector)) for e in vector]
 
 
-def calcAvNormal(facets):
-    """Calculates the average normal of a dataframe of triangles. Dataframe must contain
+def calcAvNormal(facets: pd.DataFrame) -> List:
+    """
+    Calculates the average normal of a dataframe of triangles. Dataframe must contain
     the components of the normals of each triangle in columns named 'NormalX', 'NormalY', 'NormalZ'
-    as is the case for Carto data"""
+    as is the case for Carto data
+
+    Args:
+        facets: A Pandas Dataframe of triangles. Must contain the following columns: 'NormalX', 'NormalY', 'NormalZ',
+        'GroupID'
+
+    Returns:
+        List: An array containing the components of the normalized average normal of the given triangles.
+    """
     av_normal = [0, 0, 0]
     # loop over all facets and calculate average normal
     for row in facets[['NormalX', 'NormalY', 'NormalZ', 'GroupID']].iterrows():
@@ -41,98 +61,46 @@ def calcAvNormal(facets):
     return av_normal
 
 
-def meshToCsv(inmesh, meshdir="", verbose=True):
-    with io.open(inmesh, 'r', encoding='utf-8') as f:
-        # variables used throughout loop:
-        section = "Header"  # name of current section
-        current_line = 0  # index of current line being read
-        section_line = 0  # index of current section name
-        section_ind = 0
+def dist(co1: Union[np.ndarray, List, Tuple], co2: Union[np.ndarray, List, Tuple]) -> float:
+    """
+    Calculates the distance between two coordinates.
 
-        # Section 0 = Header, file format info
-        # Section 1 = General Attributes, info about section data
-        # Section 2 = VerticesSection, x y z coordinates plus data (normals and GroupID)
-        # Section 3 = TrianglesSection,
-        # section 4 = VerticesColorSection
-        # Section 5 = VerticesAttributesSection
+    Args:
+        co1: Array containing the components of the first coordinate
 
-        for line in f:
-            current_line += 1  # update line index
+        co2: Array containing the components of the second coordinate
 
-            if line[0] == "[":  # new section encountered
-                if verbose:
-                    print("\t" + str(section_ind) + '. ' + section)
-                section = line[1:-2]  # section name
-                section_line = current_line
-                section_ind += 1
-
-                # Opening or closing csv files
-                if section_ind > 2:
-                    of.close()  # past VerticesSection, an outfile has already been created (infra)
-                if section_ind > 1:  # skip GeneralAttributes
-                    of = open(meshdir + section + ".csv", "w+", encoding='utf-8')
-
-                # New tqdm loops per section
-                # if section_ind > 1:
-                #     if section_ind > 2:
-                #         time.sleep(1e-6)
-                #         loop.close()  # close previous loop
-                #     if section_ind == 3:
-                #         time.sleep(1e-6)
-                #         loop = tqdm(desc='        ' + section, total=n_triangles, position=0, leave=True)
-                #     else:
-                #         time.sleep(1e-6)
-                #         loop = tqdm(desc='        ' + section, total=n_vertices, position=0, leave=True)
-
-            # extract n_vertices and n_triangles to use for tqdm loops
-            # elif section_ind == 1:
-            #     if current_line == section_line + 3:  # n_verticess
-            #         n_vertices = int(line.split("=")[1])
-            #     elif current_line == section_line + 4:
-            #         n_triangles = int(line.split('=')[1])
-
-            elif section_ind > 1:  # useful data
-                if section_ind == 4:
-                    header_line = section_line + 2  # VerticesColorSection has extra line
-                else:
-                    header_line = section_line + 1
-
-                if current_line == header_line:  # column names
-                    column_names = line.split()[1:]  # first element is useless ";"
-                    of.write("Index")
-                    for name in column_names:
-                        of.write("," + name)
-                    of.write("\n")
-                    # time.sleep(1e-8)
-
-                elif len(line) > 1 and line[0] != ";":  # actual data, not empty line or column names
-                    # time.sleep(1e-8)
-                    # loop.update(1)
-                    ind, data = line.split("=")  # line has shape "ind = x  y  z  nx  ny  nz  groupID
-                    of.write(str(ind))
-                    for el in data.split():  # ignore ind
-                        of.write("," + str(el))
-                    of.write("\n")
-        # time.sleep(1e-8)
-        # loop.close()
-        # time.sleep(1e-8)
-        of.close()
-
-
-def dist(co1, co2):
+    Returns:
+        float: Distance between the two coordinates
+    """
     return np.linalg.norm([float(e2) - float(e1) for e1, e2 in zip(co1, co2)])
 
 
-def pmToPvFaces(pmfaces):
+def pmToPvFaces(pmfaces: Union[np.ndarray, List, Tuple]) -> np.ndarray:
+    """
+    Given an array of pymesh triangles, where these triangles are arrays of the form [ind1, ind2, ind3], converts
+    these faces to the PyVista representation of the form [3, ind1_0, ind2_0, ind3_0, 3, ind1_1, ind2_1, ind3_1, 3 ...]
+
+    Args:
+        pmfaces: A Nx3 array, where N = n_faces.
+
+    Returns:
+        ndarray: A numpy ndarray containing the triangles in PyVista's format
+    """
     assert pmfaces.shape[1] == 3, 'At least one cell does not have 3 indices'
     return np.array([[len(f), *f] for f in pmfaces]).flatten()
 
 
-def pvToPmCells(pyvistafaces):
-    """A pyvista cell looks like [npoints ind1 ind2 ...]
-    n_points : amount of points in cell
-    Not necessarily a triangle, not necessarily co-planar
-    this converts a pyvista face to a pymesh face: [in1 ind2 ind3]"""
+def pvToPmCells(pyvistafaces: Union[np.ndarray, List, Tuple]) -> np.ndarray:
+    """
+    Given an array of pyvista faces, converts these faces to the Pymesh representation.
+
+    Args:
+        pyvistafaces: An array containing the faces in PyVista format
+
+    Returns:
+        ndarray: A numpy ndarray containing the triangles in PyMesh format
+    """
     f = []  # list of all faces
     i = 0
     while i < len(pyvistafaces):
@@ -146,12 +114,16 @@ def pvToPmCells(pyvistafaces):
     return np.array(f)
 
 
-def pvToPmFaces(pyvistafaces):
-    """A pyvista cell array looks like [npoints_1 ind1_1 ind2_1 ... npoints_i ind1_i ind2_i ...]
-    n_points : amount of points in face
-    ONLY works for triangles
-    this converts a pyvista face to a pymesh face: [in1 ind2 ind3]
-    Identical to pvToPmCells, but with extra check to see if all the faces have 3 nodes"""
+def pvToPmFaces(pyvistafaces: Union[np.ndarray, List, Tuple]) -> np.ndarray:
+    """
+    Given an array of pyvista triangles, converts these faces to the PyMesh representation.
+
+    Args:
+        pyvistafaces: An array containing the faces in PyVista format.
+
+    Returns:
+        ndarray: A numpy ndarray containing the triangles in PyMesh format
+    """
     f = []  # list of all faces
     i = 0
     while i < len(pyvistafaces):
@@ -168,8 +140,16 @@ def pvToPmFaces(pyvistafaces):
     return np.array(f)
 
 
-def makePyVista(pmmesh):
-    """Converts PyMesh mesh to PyVista mesh"""
+def makePyVista(pmmesh: pm.Mesh) -> pv.PolyData:
+    """
+    Converts PyMesh mesh to PyVista mesh (PolyData)
+
+    Args:
+        pmmesh: the mesh in PyMesh.Mesh format
+
+    Returns:
+        PolyData: The mesh in PyVista's PolyData format
+    """
     names = pmmesh.get_attribute_names()
     mesh = pv.PolyData(pmmesh.vertices, pmToPvFaces(pmmesh.faces))
     for a in names:
@@ -177,8 +157,16 @@ def makePyVista(pmmesh):
     return mesh
 
 
-def makePyMesh(pvmesh):
-    """Converts PyVista mesh to PyMesh mesh"""
+def makePyMesh(pvmesh: pv.PolyData) -> pm.Mesh:
+    """
+    Converts PyVista mesh to PyMesh mesh
+
+    Args:
+        pvmesh: The mesh in PyVista's PolyData format
+
+    Returns:
+        Mesh: The mesh as a PyMesh Mesh object
+    """
     names = pvmesh.array_names
     mesh = pm.form_mesh(pvmesh.points, pvToPmCells(pvmesh.faces))
     for name in names:
@@ -187,10 +175,18 @@ def makePyMesh(pvmesh):
     return mesh
 
 
-def colorFromCsv(meshdir=""):
-    """Makes mesh from VerticesSection.csv and TrianglesSection.csv (generated by carto2csv.py)
+def colorFromCsv(meshdir: str = "") -> pv.PolyData:
+    """
+    Makes mesh from VerticesSection.csv and TrianglesSection.csv
     Assigns tags in .mesh file as scalar data on this mesh
-    Returns mesh with this scalar data"""
+    Returns mesh with this scalar data.
+
+    Args:
+        meshdir: Directory containing VerticesSection.csv and TrianglesSection.csv
+
+    Returns:
+        The mesh with scalar data applied in PyVista's PolyData format
+    """
     triangles = pd.read_csv(meshdir + 'TrianglesSection.csv', sep=',')
     tri = np.array(triangles[['Vertex0', 'Vertex1', 'Vertex2']].values)
 
@@ -205,9 +201,19 @@ def colorFromCsv(meshdir=""):
     return mesh
 
 
-def makeNonCollinear(pvmesh, edges):
-    """Iterates mesh and moves over points in the middle of two colinear edges.
-    edges must be 2D array"""
+def makeNonCollinear(pvmesh: pv.PolyData, edges: Union[np.ndarray, List, Tuple]) -> pv.PolyData:
+    """
+    Iterates mesh and replades points in the middle of two colinear edges.
+    Edges must be 2D array
+
+    Args:
+        pvmesh: The input mesh containing colinearities in PyVista's PolyData format
+
+        edges: A list of point index pairs. Each index pair defines a colinear edge.
+
+    Returns:
+        PolyData: The mesh with its colinear edges lifted.
+    """
     mesh = pvmesh
     points = mesh.points
     triangles = pd.DataFrame(pvToPmFaces(pvmesh.faces), columns=[['Vertex0', 'Vertex1', 'Vertex2']])
@@ -253,7 +259,23 @@ def makeNonCollinear(pvmesh, edges):
     return newmesh
 
 
-def cleanMesh_Meshtool(meshname, threshold=.3, ifmt='carp_txt', ofmt='carp_txt'):
+def cleanMesh_Meshtool(meshname: str, threshold: float = .3, ifmt: str = 'carp_txt', ofmt: str = 'carp_txt') -> None:
+    """
+    Calls upon meshtool in a shell command to clean a mesh.
+
+    Args:
+        meshname: Name of the mesh to be cleaned
+        threshold: Quality threshold. Cleaning will continue until this quality is reached, or the max amount of iterations has been reached
+
+        ifmt: The format of the input mesh. May be; carp_txt, carp_bin, vtk, vtk_bin, mmg, neu, purk, obj, off, gmsh,
+        stellar, vcflow
+
+        ofmt: The format of the output mesh. May be: carp_txt, carp_bin, vtk, vtk_bin, vtk_polydata, mmg, neu, obj, off,
+        stellar, vcflow, ensight_txt
+
+    Returns:
+        None: Nothing. Writes out the cleaned mesh in the desired format.
+    """
     p = Popen("meshtool clean quality -msh={0} -thr={1}"
               "-ifmt={2} -ofmt={3} -outmsh={0}".format(meshname, threshold, ifmt, ofmt),
               shell=True, stdout=PIPE, encoding='utf-8')
@@ -280,8 +302,16 @@ def cleanMesh_Meshtool(meshname, threshold=.3, ifmt='carp_txt', ofmt='carp_txt')
                     break
 
 
-def getEdgeLengths(mesh):
-    """Gets all edge lengths from a PyMesh mesh (used in homogenizeMesh())"""
+def getEdgeLengths(mesh: pm.Mesh) -> List:
+    """
+    Gets all edge lengths from a PyMesh mesh (used in :func:`~carto_mesh.CartoMesh.homogenizeMesh`)
+
+    Args:
+        mesh: The input mesh in PyMesh's Mesh format
+
+    Returns:
+        List: A list containing all the lengths of the edges of the input mesh.
+    """
     edges = mesh.extract_all_edges()
     pmedges = pvToPmCells(edges.extract_cells(range(edges.n_cells)).cells)  # extract edge ind as cells
     distances = []
@@ -291,9 +321,23 @@ def getEdgeLengths(mesh):
     return distances
 
 
-def convertMesh_Meshtool(meshname, ifmt='vtk', ofmt='carp_txt'):
-    imsh = meshname
-    omsh = meshname
+def convertMesh_Meshtool(meshname: str, ifmt: str = 'vtk', ofmt: str = 'carp_txt') -> None:
+    """
+    Calls upon meshtool in a shell command to convert a mesh.
+
+    Args:
+        meshname: Name of the mesh, excluding file extension.
+
+        ifmt: File format of the input mesh. Can be: carp_txt, carp_bin, vtk, vtk_bin, mmg, neu, purk, obj, off, gmsh,
+        stellar, vcflow
+
+        ofmt: File format of the output mesh. Can be: carp_txt, carp_bin, vtk, vtk_bin, vtk_polydata, mmg, neu, obj,
+        off, stellar, vcflow, ensight_txt
+
+    Returns:
+        None: Nothing. Writes out the mesh in the desired format.
+    """
+    imsh = omsh = meshname
     if ifmt == 'vtk':
         imsh += '.1'
     if ofmt == 'vtk':
@@ -325,12 +369,19 @@ def convertMesh_Meshtool(meshname, ifmt='vtk', ofmt='carp_txt'):
                     break
 
 
-def ptsToParaview(filename: str, column_name: str = "meshID") -> None:  # .pts meshfile to paraview csv
+def ptsToParaview(filename: str, column_name: str = "meshID") -> None:
     """
-    Takes a pts file, adds point ID as extra data to each point, writes out to csv file
+    Takes a pts file, adds point ID as extra data to each point, writes out to csv file. This function is useful
+    to convert meshes and read them in in ParaView. ParaView does not remember original mesh indexing during mesh
+    operations.
+
     Args:
       filename: Name of .pts file (including '.pts' extension) to be converted to paraview-friendly format
-      column_name: Name of the column to contain the mesh indices.
+
+      column_name: Name of the column to contain the mesh indices. Default = "meshID"
+
+    Returns:
+        None: Nothing. Writes out the mesh as a .csv file containing the columns 'X', 'Y', 'Z' and <column_name>
     """
 
     ofname = filename.split(".")[0]
@@ -344,20 +395,26 @@ def ptsToParaview(filename: str, column_name: str = "meshID") -> None:  # .pts m
     for line in tqdm(df.readlines()[1:], desc='        '):
         for e in line[:-2].split():  # x, y or z co-ordinate
             outfile.write(str(e) + ',')  # write co-ordinates
-        outfile.write(str(i)+'\n')  # add point ID
+        outfile.write(str(i) + '\n')  # add point ID
         i += 1
 
     outfile.close()
     df.close()
 
 
-def vtkToStl(vtk_mesh, location, meshname):
-    # mesh = pv.PolyData(mesh.points, mesh.cells)
-    faces = pv.DataSetFilters.extract_surface(vtk_mesh)
-    pv.save_meshio(location + '/' + meshname.split('.')[0] + '.stl', faces)
+def writeToSmesh(mesh: pv.PolyData, name: str) -> None:
+    """
+    Writes out a .smesh file with a hole in the middle. This is used in :func:`~carto_mesh.CartoMesh.reconstruct` to be
+    used as input for TetGen.
 
+    Args:
+        mesh: The surface mesh, ready to be tetrahedralized, in PyVista's PolyData format.
 
-def writeToSmesh(mesh, name):
+        name: Name of the input mesh, and corresponding output .smesh file
+
+    Returns:
+        None: Nothing. Writes out a .smesh file.
+    """
     of = open(name + '.smesh', 'w+')
     # attr_names = mesh.array_names ??
 
@@ -400,13 +457,17 @@ def writeToSmesh(mesh, name):
     of.write("0 {} {} {}\n".format(*np.array(mesh.points).mean(axis=0)))
 
 
-def cleanMesh(pvmesh, tol, iter=10, print_si=True):
+def cleanMesh(pvmesh: pv.PolyData, tol: float, iterations: int = 10, print_si: bool = True) -> pv.PolyData:
     """
-    Uses Bilt-in PyVista and PyMesh methods to clean the mesh.
+    Uses built-in PyVista and PyMesh methods to clean the mesh.
+
     Args:
         pvmesh: The mesh in PyVista's PolyData format
-        tol: Absolute tolerance to use in PyMesh's remove_duplicated_vertices and PyVista's clean() methods
-        iter: Amount of iterations to try and remove self-intersections with PyMesh
+
+        tol: Absolute tolerance to use in PyMesh's remove_duplicated_vertices() and PyVista's clean() methods
+
+        iterations: Amount of iterations to try and remove self-intersections with PyMesh
+
         print_si: Print progress of self-intersection cleanup
 
     Returns:
@@ -420,7 +481,7 @@ def cleanMesh(pvmesh, tol, iter=10, print_si=True):
         print('\t' + str(si) + ' self-intersections detected')
 
     i = 0
-    while i < iter and si != 0:  # there are still self-intersections, max 10 iterations
+    while i < iterations and si != 0:  # there are still self-intersections, max 10 iterations
         mesh_, info = pm.remove_duplicated_faces(mesh_)
         mesh_, info = pm.remove_duplicated_vertices(mesh_, tol=tol)
         mesh_ = pm.resolve_self_intersection(mesh_)
@@ -436,9 +497,20 @@ def cleanMesh(pvmesh, tol, iter=10, print_si=True):
     return mesh_
 
 
-def getGroupIds(csvfile='TrianglesSection.csv', skip="default"):
+def getGroupIds(csvfile: str = 'TrianglesSection.csv', col_name: str = "GroupID", skip: Tuple = (0, -1000000)) -> List:
+    """
+    Extract the tags from TrianglesSection.csv as generated by :func:`~carto_mesh.CartoMesh.__cartoToCsv`
+
+    Args:
+        csvfile: Name of the .csv file to read. Default = 'TrianglesSection'. File must be .csv and contain a column <col_name>.
+
+        skip: Array of tags to ignore. These won't be extracted. Default = [0, -1000000]
+
+    Returns:
+        List: a list containing the unique tags in the input file
+    """
     if skip == "default":
         skip = [0, -1000000]  # skip border region and myocardium
     f = pd.read_csv(csvfile)
-    ids = set([e for e in f["GroupID"].values if e not in skip])
+    ids = set([e for e in f[col_name].values if e not in skip])
     return list(ids)

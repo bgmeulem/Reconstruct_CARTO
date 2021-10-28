@@ -48,27 +48,32 @@
   <div class="section" id="module-mesh_tools">
 <span id="mesh-tools-module"></span><h1>mesh_tools module<a class="headerlink" href="#module-mesh_tools" title="Permalink to this headline">¶</a></h1>
 <p>This file contains a selection of useful vector operations and mesh operations such as io, cleaning, converting etc.
-This file is imported by carto_mesh.py</p>
+This file is imported by <a class="reference internal" href="carto_mesh.html#module-carto_mesh" title="carto_mesh"><code class="xref py py-mod docutils literal notranslate"><span class="pre">carto_mesh</span></code></a>.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.calcAvNormal">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">calcAvNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">facets</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#calcAvNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.calcAvNormal" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">calcAvNormal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">facets</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#calcAvNormal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.calcAvNormal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the average normal of a dataframe of triangles. Dataframe must contain
 the components of the normals of each triangle in columns named ‘NormalX’, ‘NormalY’, ‘NormalZ’
 as is the case for Carto data</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>facets: A Pandas Dataframe of triangles. Must contain the following columns: ‘NormalX’, ‘NormalY’, ‘NormalZ’,
+‘GroupID’</p>
+</dd>
+<dt>Returns:</dt><dd><p>List: An array containing the components of the normalized average normal of the given triangles.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.cleanMesh">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">cleanMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pvmesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_si</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#cleanMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.cleanMesh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Uses Bilt-in PyVista and PyMesh methods to clean the mesh.
-Args:</p>
-<blockquote>
-<div><p>pvmesh: The mesh in PyVista’s PolyData format
-tol: Absolute tolerance to use in PyMesh’s remove_duplicated_vertices and PyVista’s clean() methods
-iter: Amount of iterations to try and remove self-intersections with PyMesh
-print_si: Print progress of self-intersection cleanup</p>
-</div></blockquote>
-<dl class="simple">
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">cleanMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pvmesh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyvista.core.pointset.PolyData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_si</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pyvista.core.pointset.PolyData</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#cleanMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.cleanMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses built-in PyVista and PyMesh methods to clean the mesh.</p>
+<dl>
+<dt>Args:</dt><dd><p>pvmesh: The mesh in PyVista’s PolyData format</p>
+<p>tol: Absolute tolerance to use in PyMesh’s remove_duplicated_vertices() and PyVista’s clean() methods</p>
+<p>iterations: Amount of iterations to try and remove self-intersections with PyMesh</p>
+<p>print_si: Print progress of self-intersection cleanup</p>
+</dd>
 <dt>Returns:</dt><dd><p>PolyData: The cleaned mesh</p>
 </dd>
 </dl>
@@ -76,111 +81,204 @@ print_si: Print progress of self-intersection cleanup</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.cleanMesh_Meshtool">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">cleanMesh_Meshtool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'carp_txt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ofmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'carp_txt'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#cleanMesh_Meshtool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.cleanMesh_Meshtool" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">cleanMesh_Meshtool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifmt</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'carp_txt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ofmt</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'carp_txt'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#cleanMesh_Meshtool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.cleanMesh_Meshtool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls upon meshtool in a shell command to clean a mesh.</p>
+<dl>
+<dt>Args:</dt><dd><p>meshname: Name of the mesh to be cleaned
+threshold: Quality threshold. Cleaning will continue until this quality is reached, or the max amount of iterations has been reached</p>
+<p>ifmt: The format of the input mesh. May be; carp_txt, carp_bin, vtk, vtk_bin, mmg, neu, purk, obj, off, gmsh,
+stellar, vcflow</p>
+<p>ofmt: The format of the output mesh. May be: carp_txt, carp_bin, vtk, vtk_bin, vtk_polydata, mmg, neu, obj, off,
+stellar, vcflow, ensight_txt</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out the cleaned mesh in the desired format.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.colorFromCsv">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">colorFromCsv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#colorFromCsv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.colorFromCsv" title="Permalink to this definition">¶</a></dt>
-<dd><p>Makes mesh from VerticesSection.csv and TrianglesSection.csv (generated by carto2csv.py)
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">colorFromCsv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshdir</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pyvista.core.pointset.PolyData</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#colorFromCsv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.colorFromCsv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Makes mesh from VerticesSection.csv and TrianglesSection.csv
 Assigns tags in .mesh file as scalar data on this mesh
-Returns mesh with this scalar data</p>
+Returns mesh with this scalar data.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>meshdir: Directory containing VerticesSection.csv and TrianglesSection.csv</p>
+</dd>
+<dt>Returns:</dt><dd><p>The mesh with scalar data applied in PyVista’s PolyData format</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.convertMesh_Meshtool">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">convertMesh_Meshtool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vtk'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ofmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'carp_txt'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#convertMesh_Meshtool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.convertMesh_Meshtool" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">convertMesh_Meshtool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifmt</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'vtk'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ofmt</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'carp_txt'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#convertMesh_Meshtool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.convertMesh_Meshtool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls upon meshtool in a shell command to convert a mesh.</p>
+<dl>
+<dt>Args:</dt><dd><p>meshname: Name of the mesh, excluding file extension.</p>
+<p>ifmt: File format of the input mesh. Can be: carp_txt, carp_bin, vtk, vtk_bin, mmg, neu, purk, obj, off, gmsh,
+stellar, vcflow</p>
+<p>ofmt: File format of the output mesh. Can be: carp_txt, carp_bin, vtk, vtk_bin, vtk_polydata, mmg, neu, obj,
+off, stellar, vcflow, ensight_txt</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out the mesh in the desired format.</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.dist">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">co1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.dist" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">dist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">co1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#dist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.dist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the distance between two coordinates.</p>
+<dl>
+<dt>Args:</dt><dd><p>co1: Array containing the components of the first coordinate</p>
+<p>co2: Array containing the components of the second coordinate</p>
+</dd>
+<dt>Returns:</dt><dd><p>float: Distance between the two coordinates</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.getEdgeLengths">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">getEdgeLengths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#getEdgeLengths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.getEdgeLengths" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets all edge lengths from a PyMesh mesh (used in homogenizeMesh())</p>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">getEdgeLengths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pymesh.Mesh.Mesh</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#getEdgeLengths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.getEdgeLengths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets all edge lengths from a PyMesh mesh (used in <a class="reference internal" href="carto_mesh.html#carto_mesh.CartoMesh.homogenizeMesh" title="carto_mesh.CartoMesh.homogenizeMesh"><code class="xref py py-func docutils literal notranslate"><span class="pre">homogenizeMesh()</span></code></a>)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>mesh: The input mesh in PyMesh’s Mesh format</p>
+</dd>
+<dt>Returns:</dt><dd><p>List: A list containing all the lengths of the edges of the input mesh.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.getGroupIds">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">getGroupIds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csvfile</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'TrianglesSection.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#getGroupIds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.getGroupIds" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">getGroupIds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csvfile</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'TrianglesSection.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'GroupID'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Tuple</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">(0,</span> <span class="pre">-</span> <span class="pre">1000000)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#getGroupIds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.getGroupIds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the tags from TrianglesSection.csv as generated by <a class="reference internal" href="carto_mesh.html#carto_mesh.CartoMesh.__cartoToCsv" title="carto_mesh.CartoMesh.__cartoToCsv"><code class="xref py py-func docutils literal notranslate"><span class="pre">__cartoToCsv()</span></code></a></p>
+<dl>
+<dt>Args:</dt><dd><p>csvfile: Name of the .csv file to read. Default = ‘TrianglesSection’. File must be .csv and contain a column &lt;col_name&gt;.</p>
+<p>skip: Array of tags to ignore. These won’t be extracted. Default = [0, -1000000]</p>
+</dd>
+<dt>Returns:</dt><dd><p>List: a list containing the unique tags in the input file</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.makeNonCollinear">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">makeNonCollinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pvmesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#makeNonCollinear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.makeNonCollinear" title="Permalink to this definition">¶</a></dt>
-<dd><p>Iterates mesh and moves over points in the middle of two colinear edges.
-edges must be 2D array</p>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">makeNonCollinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pvmesh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyvista.core.pointset.PolyData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pyvista.core.pointset.PolyData</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#makeNonCollinear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.makeNonCollinear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterates mesh and replades points in the middle of two colinear edges.
+Edges must be 2D array</p>
+<dl>
+<dt>Args:</dt><dd><p>pvmesh: The input mesh containing colinearities in PyVista’s PolyData format</p>
+<p>edges: A list of point index pairs. Each index pair defines a colinear edge.</p>
+</dd>
+<dt>Returns:</dt><dd><p>PolyData: The mesh with its colinear edges lifted.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.makePyMesh">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">makePyMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pvmesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#makePyMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.makePyMesh" title="Permalink to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">makePyMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pvmesh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyvista.core.pointset.PolyData</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pymesh.Mesh.Mesh</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#makePyMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.makePyMesh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Converts PyVista mesh to PyMesh mesh</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>pvmesh: The mesh in PyVista’s PolyData format</p>
+</dd>
+<dt>Returns:</dt><dd><p>Mesh: The mesh as a PyMesh Mesh object</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.makePyVista">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">makePyVista</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pmmesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#makePyVista"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.makePyVista" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts PyMesh mesh to PyVista mesh</p>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">makePyVista</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pmmesh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pymesh.Mesh.Mesh</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pyvista.core.pointset.PolyData</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#makePyVista"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.makePyVista" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts PyMesh mesh to PyVista mesh (PolyData)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>pmmesh: the mesh in PyMesh.Mesh format</p>
+</dd>
+<dt>Returns:</dt><dd><p>PolyData: The mesh in PyVista’s PolyData format</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="mesh_tools.meshToCsv">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">meshToCsv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inmesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#meshToCsv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.meshToCsv" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.normalize">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.normalize" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.normalize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normalizes a vector such that its length equals 1.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>vector: A 1xN array containing the vector components.</p>
+</dd>
+<dt>Returns:</dt><dd><p>List: the normalized vector</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.pmToPvFaces">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">pmToPvFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pmfaces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#pmToPvFaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.pmToPvFaces" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">pmToPvFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pmfaces</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#pmToPvFaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.pmToPvFaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an array of pymesh triangles, where these triangles are arrays of the form [ind1, ind2, ind3], converts
+these faces to the PyVista representation of the form [3, ind1_0, ind2_0, ind3_0, 3, ind1_1, ind2_1, ind3_1, 3 …]</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>pmfaces: A Nx3 array, where N = n_faces.</p>
+</dd>
+<dt>Returns:</dt><dd><p>ndarray: A numpy ndarray containing the triangles in PyVista’s format</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.ptsToParaview">
 <span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">ptsToParaview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'meshID'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#ptsToParaview"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.ptsToParaview" title="Permalink to this definition">¶</a></dt>
-<dd><p>Takes a pts file, adds point ID as extra data to each point, writes out to csv file
-Args:</p>
-<blockquote>
-<div><p>filename: Name of .pts file (including ‘.pts’ extension) to be converted to paraview-friendly format
-column_name: Name of the column to contain the mesh indices.</p>
-</div></blockquote>
+<dd><p>Takes a pts file, adds point ID as extra data to each point, writes out to csv file. This function is useful
+to convert meshes and read them in in ParaView. ParaView does not remember original mesh indexing during mesh
+operations.</p>
+<dl>
+<dt>Args:</dt><dd><p>filename: Name of .pts file (including ‘.pts’ extension) to be converted to paraview-friendly format</p>
+<p>column_name: Name of the column to contain the mesh indices. Default = “meshID”</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out the mesh as a .csv file containing the columns ‘X’, ‘Y’, ‘Z’ and &lt;column_name&gt;</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.pvToPmCells">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">pvToPmCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pyvistafaces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#pvToPmCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.pvToPmCells" title="Permalink to this definition">¶</a></dt>
-<dd><p>A pyvista cell looks like [npoints ind1 ind2 …]
-n_points : amount of points in cell
-Not necessarily a triangle, not necessarily co-planar
-this converts a pyvista face to a pymesh face: [in1 ind2 ind3]</p>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">pvToPmCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pyvistafaces</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#pvToPmCells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.pvToPmCells" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an array of pyvista faces, converts these faces to the Pymesh representation.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>pyvistafaces: An array containing the faces in PyVista format</p>
+</dd>
+<dt>Returns:</dt><dd><p>ndarray: A numpy ndarray containing the triangles in PyMesh format</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.pvToPmFaces">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">pvToPmFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pyvistafaces</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#pvToPmFaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.pvToPmFaces" title="Permalink to this definition">¶</a></dt>
-<dd><p>A pyvista cell array looks like [npoints_1 ind1_1 ind2_1 … npoints_i ind1_i ind2_i …]
-n_points : amount of points in face
-ONLY works for triangles
-this converts a pyvista face to a pymesh face: [in1 ind2 ind3]
-Identical to pvToPmCells, but with extra check to see if all the faces have 3 nodes</p>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">pvToPmFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pyvistafaces</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span> </span><span class="pre">List</span><span class="p"><span class="pre">,</span> </span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#pvToPmFaces"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.pvToPmFaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given an array of pyvista triangles, converts these faces to the PyMesh representation.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>pyvistafaces: An array containing the faces in PyVista format.</p>
+</dd>
+<dt>Returns:</dt><dd><p>ndarray: A numpy ndarray containing the triangles in PyMesh format</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="mesh_tools.vtkToStl">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">vtkToStl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vtk_mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">location</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshname</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#vtkToStl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.vtkToStl" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="mesh_tools.writeToSmesh">
-<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">writeToSmesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mesh_tools.html#writeToSmesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.writeToSmesh" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">mesh_tools.</span></span><span class="sig-name descname"><span class="pre">writeToSmesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyvista.core.pointset.PolyData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/mesh_tools.html#writeToSmesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#mesh_tools.writeToSmesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes out a .smesh file with a hole in the middle. This is used in <a class="reference internal" href="carto_mesh.html#carto_mesh.CartoMesh.reconstruct" title="carto_mesh.CartoMesh.reconstruct"><code class="xref py py-func docutils literal notranslate"><span class="pre">reconstruct()</span></code></a> to be
+used as input for TetGen.</p>
+<dl>
+<dt>Args:</dt><dd><p>mesh: The surface mesh, ready to be tetrahedralized, in PyVista’s PolyData format.</p>
+<p>name: Name of the input mesh, and corresponding output .smesh file</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out a .smesh file.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </div>
 

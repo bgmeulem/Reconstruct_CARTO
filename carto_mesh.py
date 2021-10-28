@@ -1,8 +1,8 @@
 """
 This file contains the class CartoMesh with all its reconstruction-specific methods.
 This class contains methods for initialising from a .mesh file, plotting, reconstructing and applying conduction velocities.
-This file imports mesh_tools.py for all general mesh functions that are not specific to carto meshes.
-mesh_tools.py also concerns itself with all python imports.
+This file imports :mod:`mesh_tools` for all general mesh functions that are not specific to carto meshes.
+:mod:`mesh_tools` also concerns itself with all python module imports.
 """
 from mesh_tools import *
 
@@ -521,7 +521,7 @@ class CartoMesh:
             plotEdgelengths(dist_range)
 
         print("\tCleaning mesh...")
-        mesh_ = cleanMesh(makePyVista(mesh_), tol=min_edge / 3., iter=6)
+        mesh_ = cleanMesh(makePyVista(mesh_), tol=min_edge / 3., iterations=6)
         self.__update(mesh_)
         self.name += '_{}-{}µm'.format(int(min_edge), int(max_edge))  # update name
 

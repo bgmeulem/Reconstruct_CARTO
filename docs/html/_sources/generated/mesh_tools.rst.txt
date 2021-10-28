@@ -24,13 +24,11 @@
       makeNonCollinear
       makePyMesh
       makePyVista
-      meshToCsv
       normalize
       pmToPvFaces
       ptsToParaview
       pvToPmCells
       pvToPmFaces
-      vtkToStl
       writeToSmesh
    
    
