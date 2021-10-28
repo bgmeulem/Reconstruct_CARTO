@@ -767,5 +767,5 @@ class CartoMesh:
 
 
 if __name__ == '__main__':
-    m = CartoMesh('BlankMeshes/OC59')
+    m = CartoMesh('Test_Meshes/OC59')
     m.reconstruct()

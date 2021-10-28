@@ -1,0 +1,7 @@
+### No version specifiers ###
+matplotlib
+pyvista
+numpy
+sklearn
+pandas
+tqdm
