@@ -1,5 +1,8 @@
+"""This file contains a selection of useful vector operations and mesh operations such as io, cleaning, converting etc.
+This file is imported by carto_mesh.py"""
 import pyvista as pv
 import numpy as np
+from typing import Tuple, List, Union
 from sklearn import neighbors as nb
 import pandas as pd
 from subprocess import Popen, PIPE
@@ -10,6 +13,13 @@ import os
 import sys
 import io
 from tqdm import tqdm
+import time
+import matplotlib.pyplot as plt
+from collections import OrderedDict
+import configparser
+
+plt.style.use('fivethirtyeight')
+colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six 'fivethirtyeight' themed colors
 
 G_REGION = 1107558400  # Carto ID for conductive region
 
@@ -391,8 +401,18 @@ def writeToSmesh(mesh, name):
 
 
 def cleanMesh(pvmesh, tol, iter=10, print_si=True):
-    mesh_ = pvmesh.clean(lines_to_points=True, polys_to_lines=True,
-                         tolerance=tol, absolute=True)
+    """
+    Uses Bilt-in PyVista and PyMesh methods to clean the mesh.
+    Args:
+        pvmesh: The mesh in PyVista's PolyData format
+        tol: Absolute tolerance to use in PyMesh's remove_duplicated_vertices and PyVista's clean() methods
+        iter: Amount of iterations to try and remove self-intersections with PyMesh
+        print_si: Print progress of self-intersection cleanup
+
+    Returns:
+        PolyData: The cleaned mesh
+    """
+    mesh_ = pvmesh.clean(lines_to_points=True, polys_to_lines=True, tolerance=tol, absolute=True)
     mesh_ = makePyMesh(mesh_)
     mesh_, info = pm.remove_degenerated_triangles(mesh_)
     si = len(pm.detect_self_intersection(mesh_))
@@ -412,8 +432,7 @@ def cleanMesh(pvmesh, tol, iter=10, print_si=True):
     print("")
     mesh_, info = pm.remove_duplicated_vertices(mesh_, tol=tol)
     mesh_, info = pm.remove_duplicated_faces(mesh_)
-    mesh_ = makePyVista(mesh_).clean(lines_to_points=True, polys_to_lines=True,
-                                     tolerance=tol, absolute=True)
+    mesh_ = makePyVista(mesh_).clean(lines_to_points=True, polys_to_lines=True, tolerance=tol, absolute=True)
     return mesh_
 
 
@@ -423,271 +442,3 @@ def getGroupIds(csvfile='TrianglesSection.csv', skip="default"):
     f = pd.read_csv(csvfile)
     ids = set([e for e in f["GroupID"].values if e not in skip])
     return list(ids)
-
-
-def applyCV(meshdir="", meshname=None, speed_limit=None, plot_mesh=False, radius=4000, sharpness=1.5, write_csv=False,
-            write_VTK_file=False, write_txt=True, write_dat=False,
-            write_xyz=False, write_adj=False, apply_carto_scar=False, n_variations=10, n_neighbors=5,
-            outdir='scale_factors/', plot_scar=False, manual_scar=False):
-    def extractTags(meshdir="", writeVtk=False, write_scar=True):
-        """Writes out .csv file with scar coördinates. Can also write out this surface as .vtk file"""
-
-        # get mesh from GroupID's
-        def writePerTag(mesh, meshdir):
-            """Writes out all points in a mesh with a certain tag to a .csv file
-            Currently only makes distinction between myocardium and not myocardium aka tag 0 or not 0"""
-            print('Tags: ', sorted(set(mesh['color']))[::-1])
-            scar = mesh.points[[mesh['color'] != 0]]
-            myo = mesh.points[[mesh['color'] == 0]]
-            if len(scar) > 0:
-                with open(meshdir + 'noncond.csv', 'w+') as of:
-                    csvWriter = csv.writer(of, delimiter=',')
-                    csvWriter.writerows(scar)
-            with open(meshdir + "myo.csv", 'w+') as of:
-                csvWriter = csv.writer(of, delimiter=',')
-                csvWriter.writerows(myo)
-
-        mesh = colorFromCsv(meshdir)
-        if write_scar:
-            # write tagged LPV, RPV, MV to noncond.csv and myocardium to myo.csv
-            writePerTag(mesh, meshdir)
-        if writeVtk:
-            pv.save_meshio('colors.vtk', mesh)
-        print("Tagged .vtk file written")
-
-    def getCartoScar(mesh, scarfile, k=10):
-        carto_scar = open(scarfile, "r").readlines()
-        id1, scar_co = [line.split(" : ")[0] for line in carto_scar], \
-                       [line.split(" : ")[1].strip('\n') for line in carto_scar]
-        scar_co = pv.PolyData([[1000. * float(c) for c in p.split(" ")] for p in scar_co])  # mm to µm conversion
-
-        tree = nb.KDTree(mesh.points)
-        distances, indices = tree.query(scar_co.points, k)  # k closest mesh points to scar points, i.e. mesh projection
-        proj_scar_indices = []  # indices of points on mesh closest to carto scar
-        for index in indices.flatten():
-            if index not in proj_scar_indices:
-                proj_scar_indices.append(index)
-        carto_scar = pv.PolyData(mesh.points[proj_scar_indices])
-        carto_scar["speed"] = len(carto_scar.points) * [0.]
-        return carto_scar, scar_co, proj_scar_indices
-
-    def getNonCondReg(meshdir, mesh, plot=False):
-        scars = pd.DataFrame(columns=["meshID", "speed", "x_um", "y_um", "z_um"])  # LPV, RPV and MV
-        if os.path.isdir(meshdir + "Scars"):  # apply scars if directory exists
-            for csvfile in glob.glob(meshdir + "Scars/*.csv"):
-                scar = pd.read_csv(csvfile)
-                # write scar .dat file
-                datfile = open(csvfile.split(".")[0] + ".dat", "w+")
-                dat = np.zeros(len(mesh.points))
-                dat[scar["meshID"]] = 1
-                for e in dat:
-                    datfile.write(str(e) + '\n')
-                datfile.close()
-                scars = scars.append(pd.DataFrame([[index, 0., *mesh.points[index]] for index in scar["meshID"].values],
-                                                  columns=["meshID", "speed", "x_um", "y_um", "z_um"]))
-                # plot scars one by one:
-                if plot:
-                    testmesh = mesh
-                    testmesh["speed"] = mesh.n_points * [0.]
-                    testmesh["speed"][scar["meshID"]] = 1.
-                    testmesh.ptc()
-                    testmesh.plot(stitle=csvfile)
-        return scars
-
-    def writeAdjust(meshdir, mesh):
-        """Writes adjustment file to close off Na2+ channels in cells where CV ~ 0"""
-        # mesh needs to be pyvista PolyData
-        # meshname = glob.glob(meshdir+"*.1.vtk")[0].split('.')[0]
-        cells = pvToPmCells(mesh.cells)  # mesh cells in PyMesh format
-        speed = mesh["speed"]
-
-        ptn = np.ones(len(mesh.points)) * 7.8  # default value for g_Na
-        for i in range(len(speed)):
-            if speed[i] < 1e-5:  # if CV is ~ 0 -> close off Na channel
-                vertices = cells[i]
-                ptn[vertices] = 0.
-
-        stimfile = open(meshdir + "gNA2.adj", "w+")
-        stimfile.write(str(len(ptn)) + "\n" + "extra\n")
-        for i in range(len(ptn)):
-            stimfile.write(str(i) + " " + str(ptn[i]) + "\n")
-        stimfile.close()
-
-        datfile = open(meshdir + "gNA2.dat", "w+")
-        dat = np.zeros(len(mesh.points))
-        dat[ptn == 0.] = 1
-        for e in dat:
-            datfile.write(str(e) + '\n')
-        datfile.close()
-    # Drop out nonsensical speed limits
-    if speed_limit is None:
-        speed_limit = [0., 1.4]  # default, in mm/ms
-
-    if meshname is None:
-        meshnames = glob.glob(meshdir + "*µm.1.vtk")
-        print("\tmeshnames: ", meshnames)
-        meshnames.sort()
-        meshname = meshnames[0].split("/")[-1]  # take first vtk file
-    print("\tMeshname: ", meshname)
-
-    # read in data
-    input_data = pd.read_csv(glob.glob(meshdir + "speed.csv")[0],
-                             usecols=["speed", "x", "y", "z"])  # "output/movie/output/movie/movie_*.csv"
-    med_speed = np.mean(input_data["speed"])
-    input_data["x_um"] = [1000. * e for e in input_data["x"]]
-    input_data["y_um"] = [1000. * e for e in input_data["y"]]
-    input_data["z_um"] = [1000. * e for e in input_data["z"]]
-    # create new dataframe for mutable purposes
-    calculated_data = pd.DataFrame()
-    calculated_data["x_um"] = [1000. * e for e in input_data["x"]]
-    calculated_data["y_um"] = [1000. * e for e in input_data["y"]]
-    calculated_data["z_um"] = [1000. * e for e in input_data["z"]]
-    calculated_data["speed"] = input_data["speed"]
-    mesh = pv.read(meshdir + meshname)
-
-    speeds = input_data["speed"]
-    for i in range(len(speeds)):
-        s = speeds[i]
-        if s < speed_limit[0]:
-            speeds[i] = speed_limit[0]
-        if s > speed_limit[1]:
-            speeds[i] = speed_limit[1]
-    input_data["speed"] = speeds
-
-    ids = getGroupIds()  # Carto tags (excluding 0 and -10000): correspond to MV, LPV and RPV. At max 3 different tags
-    print("\tDetected tags (non-conductive): ", ids)
-    for n in range(n_variations):
-        if n != 0:  # variations of conduction velocities
-            print("\n\t#### Variation ", n)
-            # tweak conduction velocities of input CV file
-            points = input_data[["x_um", "y_um", "z_um"]].values
-            tree = nb.KDTree(points)
-            speeds = np.zeros(len(input_data))
-            for i in tqdm(range(len(points)), desc='        Calculating new velocities'):
-                p = points[i]
-                dist, neighbors = tree.query([p], k=n_neighbors)
-                neighborCVs = input_data.loc[[int(e) for e in neighbors[0]]]["speed"]
-                mean, sigma = np.mean(neighborCVs), np.std(neighborCVs)
-                new_cv = np.random.normal(mean, sigma, 1)
-                speeds[i] = np.abs(new_cv)
-            calculated_data["speed"] = speeds
-
-        extractTags()  # creates colors.csv
-        if os.path.exists(meshdir + "noncond.csv"):
-            non_cond = np.array(pd.read_csv('noncond.csv').values)
-            non_cond = pv.PolyData(non_cond)
-            non_cond["speed"] = non_cond.n_points * [0.]
-            myo = pv.PolyData(np.array(pd.read_csv('myo.csv').values))
-            myo["speed"] = myo.n_points * [1.]
-            c = non_cond + myo  # a mask that is 1 where the carto point is myocardium
-            # for each meshpoint, find closest carto point
-            tree = nb.KDTree(c.points)
-            distances, indices = tree.query(mesh.points, k=1)  # these are c indices for each meshpoint
-            nc_mesh_ind = [ind for ind in range(len(indices)) if c["speed"][indices[ind]] == 0.]
-
-        else:
-            nc_mesh_ind = []
-            if not manual_scar:
-                print("\n\t!!! No regions detected: manual input needed !!!\n")
-
-        # applying speed limit
-        speeds = calculated_data["speed"]
-        for i in range(len(speeds)):
-            s = speeds[i]
-            if s < speed_limit[0]:
-                speeds[i] = speed_limit[0]
-            if s > speed_limit[1]:
-                speeds[i] = speed_limit[1]
-
-        # Create PolyData to use in interpolation
-        data = calculated_data
-        data["speed"] = speeds
-
-        pvdata = pv.PolyData(np.array([data["x_um"], data["y_um"], data["z_um"]]).T)
-        pvdata["speed"] = data["speed"]
-        if apply_carto_scar:
-            print("\tApplying carto scar")
-            carto_scar, scar_co, proj_scar_indices = getCartoScar(mesh,
-                                                                  glob.glob(meshdir + "coordinates_scar_p*.txt")[0],
-                                                                  k=10)
-            pvdata += carto_scar
-
-        # Interpolate on mesh
-        print("\tInterpolating on mesh")
-        mesh = mesh.interpolate(pvdata, radius=radius, sharpness=sharpness,
-                                strategy="null_value", null_value=med_speed,
-                                pass_point_arrays=False, pass_cell_arrays=False)
-
-        # Set auto-detected non-conductive regions after interpolation
-        mesh["speed"] = [0. if p in nc_mesh_ind else mesh["speed"][p] for p in range(mesh.n_points)]
-        # Set manually selected scars to 0 velocity
-        if manual_scar:
-            scars = getNonCondReg(meshdir, mesh, plot_scar)
-            mesh["speed"] = [0. if p in scars["meshID"].values else mesh["speed"][p] for p in range(mesh.n_points)]
-        pointdata = mesh["speed"]
-        mesh = mesh.ptc()  # point data to cell data
-        cell_data = mesh["speed"]
-
-        if plot_mesh:
-            mesh.plot()
-
-        # point data: squared speed
-        sq_point_data = pd.DataFrame([e ** 2 for e in pointdata], columns=["squared speed"])
-        # cell data: squared speed
-        sq_cell_data = pd.DataFrame([e ** 2 for e in cell_data], columns=["squared speed"])
-
-        # write to csv file
-        if write_csv:
-            print("\tWriting squared speed to csv")
-            sq_point_data.to_csv(meshdir + outdir + "sq_CV_point_{}.csv".format(n), index_label="PointID")
-            sq_cell_data.to_csv(meshdir + outdir + "sq_CV_cell_{}.csv".format(n), index_label="CellID")
-
-        if write_xyz:
-            print("\tWriting point cloud")
-            of = open(meshdir + outdir + "input_points_{}.txt".format(n), "w+")
-            of.write("X,Y,Z,speed\n")
-            for i in tqdm(range(len(pvdata.points))):
-                p = pvdata.points[i]
-                d = pvdata["speed"][i]
-                for c in p:
-                    of.write(str(c) + ",")
-                of.write(str(d) + '\n')
-            of.close()
-
-        # write text file to read in during simulation
-        if write_txt:
-            print("\tWriting txt file: {}scale_factor_{}.txt".format(outdir, n))
-            of = open(meshdir + outdir + "scale_factor_{}.txt".format(n), "w+")
-            for e in sq_cell_data["squared speed"]:
-                of.write(str(e) + '\n')
-            of.close()
-
-        # .dat file for visualisation purposes
-        if write_dat:
-            print("\tWriting dat file: {}scale_factor_{}.dat".format(outdir, n))
-            of = open(meshdir + outdir + "scale_factor_{}.dat".format(n), "w+")
-            for e in sq_point_data["squared speed"]:
-                of.write(str(e) + '\n')
-            of.close()
-
-        if write_adj:
-            print("\tWriting file: gNA2.adj")
-            writeAdjust(meshdir, mesh)
-
-        # write to vtk for inspection in paraview
-        if write_VTK_file:
-            print("\tWriting mesh to {}_CV{}.vtk".format(meshname.split('.')[0], n))
-            polyd = pv.UnstructuredGrid(mesh.cells, np.array(len(pvToPmCells(mesh.cells)) * [10]), mesh.points)
-            polyd["speed"] = cell_data
-            pv.save_meshio(meshdir + "{}_CV{}.vtk".format(meshname.split('.')[0], n), mesh)
-
-        if len(ids) < 3 and not manual_scar:
-            # don't calculate variations if you have to recalculate again with manual scars
-            print("\n\t!!! Only {} out of 3 tag(s) found - Manual input needed !!!\n".format(len(ids)))
-            break
-    to_delete = ["TrianglesSection.csv", "VerticesSection.csv", 'VerticesAttributesSection.csv',
-                 'VerticesColorsSection.csv']
-    for trash in to_delete:
-        if glob.glob(trash):
-            os.remove(trash)
-            print("\tDeleted ", trash)

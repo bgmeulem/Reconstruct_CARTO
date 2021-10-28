@@ -1,20 +1,10 @@
 # Reconstruct_CARTO
-Reconstructs a simulatable 3D mesh from clinical CARTO mapping data
+Reconstructs a simulatable 3D mesh from clinical CARTO mapping data, providing control over mesh resolution, 
+conduction velocity distributions and non-conductive regions.
 
 <p align="center">
 <img src=https://media0.giphy.com/media/bZM2OaOQb4HCVymzna/giphy.gif?cid=790b76112533f1a2f99b476d6833aa55d4b4c8ef9e3227b2&rid=giphy.gif&ct=g />
 </p>
-
-
-# Usage
-```
->>> from carto_mesh import *
->>> m = CartoMesh('filename.mesh')
->>> m.reconstruct()
-```
-
-If you want to apply conduction velocities, you should have a .csv file in the same
-directory as the mesh called "speed.csv" with the calculated speeds and column names "x,y,z,speed".
 
 # Requirements:
 Some requirements are not automatically installable. These requirements are:
@@ -26,11 +16,11 @@ Some requirements are not automatically installable. These requirements are:
   - Installing the third-party dependencies can be done as specified in the docs, but also by running ```./build.py all``` in the directory ```third_party```.
 
 
-To install the remaining requirements (see below), simply run
+To install the remaining requirements, run
 ```
 pip install -r requirements.txt
 ```
-This will install (or update) the following modules if they are not already installed:
+This will install the following modules, or update them if they are not already installed:
 - [PyVista](https://docs.pyvista.org/getting-started/index.html)
 - tqdm
 - matplotlib
@@ -38,7 +28,28 @@ This will install (or update) the following modules if they are not already inst
 - sklearn
 - pandas
 
-# TODO:
-- Automate calculation of conduction velocities with DGM
-- Make two seperate runfiles: one for reconstruction and one for applying ad-hoc CV
 
+# Usage
+**Reconstructing** involves taking an input ```.mesh``` file and making it into a tetrahedron mesh with user-defined 
+resolution. Conduction velocities can already be interpolated on this mesh if a .csv file containing point coordinates 
+and speed values is passed as an optional argument.
+```
+python reconstruct.py <name> --<speed_file>
+```
+**Interpolating conduction velocities** can also be done after reconstruction, e.g. in case you want to select
+non-conductive regions on the mesh *after* the reconstruction. To this end, a .csv file with point coordinates and
+conduction velocity values need to be passed as an argument to ``apply_cv.py``.
+```
+python apply_cv.py <name> --<write_adjust> --<region_dir> --<speed_file> --<ncv> --<speed_col> --<writeVTK>
+```
+
+Alternatively, if you want full control over the mesh reconstruction and its subfacets, you can also import the
+CartoMesh class and its dependencies.
+```
+>>> from carto_mesh import *
+>>> m = CartoMesh('filename.mesh')
+>>> m.reconstruct()
+```
+
+# Documentation
+Documentation can be found locally [here](docs/_build/html/index.html)

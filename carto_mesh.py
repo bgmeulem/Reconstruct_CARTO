@@ -1,17 +1,17 @@
-from typing import Tuple
+"""
+This file contains the class CartoMesh with all its reconstruction-specific methods.
+This class contains methods for initialising from a .mesh file, plotting, reconstructing and applying conduction velocities.
+This file imports mesh_tools.py for all general mesh functions that are not specific to carto meshes.
+mesh_tools.py also concerns itself with all python imports.
+"""
 from mesh_tools import *
-import time
-import matplotlib.pyplot as plt
-from collections import OrderedDict
-import configparser
-
-plt.style.use('fivethirtyeight')
-colors = plt.rcParams['axes.prop_cycle'].by_key()['color']  # six 'fivethirtyeight' themed colors
 
 
 class CartoMesh:
-    """A class containing functions for initialising from file, plotting, reconstructing and
-    applying conduction velocities."""
+    """
+    A class containing functions for initialising from file, plotting, reconstructing and
+    applying conduction velocities.
+    """
 
     def __init__(self, name: str = ""):
         self.name = ""
@@ -41,9 +41,32 @@ class CartoMesh:
         self.__initialiseFromFile(name)
         self.__readSettings()
 
-    def __initialiseFromFile(self, name: str = ""):
-        def parseName(fn):
-            comp = fn.split(os.sep) if fn else ['.']
+    def __initialiseFromFile(self, name: str = "") -> None:
+        """
+        Initialise the class from either a .mesh file or a .vtk file.
+
+        Args:
+            name: The filename (.mesh or .vtk), or the directory containing the .mesh file.
+
+        Returns:
+            None: Nothing
+        """
+
+        def parseName(fn) -> Tuple[str, str]:
+            """
+            Given a filename to initialise, this method parses the filename and extracts the filetype and
+             parent directory.
+            Args:
+                fn: Filename, containing extension or not, or name of the parent directory
+
+            Returns:
+                Tuple: tuple containing the name of the file and the name of its parent directory
+            """
+            if '*' in fn:  # starred expression: file name not given
+                fn_ = glob.glob(fn)[0]  # search for the file
+            else:
+                fn_ = fn
+            comp = fn_.split(os.sep) if fn_ else ['.']
             if '.mesh' not in comp[-1] and '.vtk' not in comp[-1]:  # only directory given: look for file
                 fns = glob.glob(os.path.join(*comp, '*.mesh'))  # take first .mesh file
                 if len(fns):
@@ -52,16 +75,20 @@ class CartoMesh:
                     raise FileNotFoundError("No .mesh or .vtk file found in directory \'{}\'"
                                             "".format(os.path.join(*comp)))
             d = os.path.join(*comp[:-1]) + os.sep
-            n = comp[-1].split('.')[0]
+            n = '.'.join(comp[-1].split('.')[:-1])  # drop file extension
             return n, d
 
         def initialiseFromMeshFile(self_, name_: str = "") -> None:
-            """Initialize a carto mesh from .mesh file.
+            """
+            Initialize a carto mesh from .mesh file.
             Reads in a .mesh file and writes out a .csv file per .mesh header. Reads in the VerticesSection and
             TrianglesSection and uses these to construct a mesh.
+
             Args:
-                self_: self, the CartoMesh() object, passed through from the overarching function.
+                self_: self, the :class:`CartoMesh` object, passed through from the overarching function.
+
                 name_: name of .mesh file to be initialised, including '.mesh' extension
+
             Returns:
                 None: Nothing. Updates mesh.
             """
@@ -81,10 +108,13 @@ class CartoMesh:
             self_.myo, self_.non_myo = self_.extractMyoAndNonMyo()
 
         def initialiseFromVtkFile(self_, name_: str = "") -> None:
-            """Initialize a carto mesh from .vtk file.
+            """Initialize a mesh from .vtk file.
+
             Args:
-                self_: self_: self, the CartoMesh() object, passed through from the overarching function.
+                self_: self_: self, the :class:`CartoMesh` object, passed through from the overarching function.
+
                 name_: name of .mesh file to be initialised, including '.vtk' extension
+
             Returns:
                 None: Nothing. Updates mesh.
             """
@@ -98,8 +128,16 @@ class CartoMesh:
         else:
             initialiseFromMeshFile(self, name)
 
-    def __cartoToCsv(self, verbose: bool = True):
-        """Reads in a carto .mesh file and generates .csv files per header in real-time in the same directory"""
+    def __cartoToCsv(self, verbose: bool = True) -> None:
+        """
+        Reads in a carto .mesh file and generates .csv files per header in real-time in the same directory
+
+        Args:
+            verbose: Use verbose output. Default=True
+
+        Returns:
+            None: Nothing. Writes out .csv files.
+        """
         with io.open(os.path.join(self.dir, self.name) + '.mesh', 'r', encoding='utf-8') as f:
             # variables used throughout loop:
             section = "Header"  # name of current section
@@ -152,8 +190,13 @@ class CartoMesh:
 
             of.close()
 
-    def __readVertTri(self):
-        """Reads VerticesSection.csv and TrianglesSection.csv files and initializes class"""
+    def __readVertTri(self) -> None:
+        """
+        Reads VerticesSection.csv and TrianglesSection.csv files and initializes class
+
+        Returns:
+            None: Nothing. Updates mesh.
+        """
         assert os.path.exists("{}/VerticesSection.csv".format(self.dir)) \
                and os.path.exists('{}/TrianglesSection.csv'.format(self.dir)), \
             "VerticesSection.csv or TrianglesSection.csv not found! Run cartoToCsv() first."
@@ -161,21 +204,32 @@ class CartoMesh:
         tri = pd.read_csv('{}/TrianglesSection.csv'.format(self.dir), sep=',')
         return vert, tri
 
-    def __getNeighboringFaces(self, index: int):
-        """Finds all mesh facets containing some point.
+    def __getNeighboringFaces(self, index: int) -> pd.DataFrame:
+        """
+        Finds all mesh facets containing some point.
+
         Args:
             index: the index referring to the mesh point.
+
         Returns:
             DataFrame: Pandas DataFrame containing the triangles that have the point at index. The DataFrame
             contains the following columns: 'Vertex0', 'Vertex1', 'Vertex2', 'NormalX', 'NormalY', 'NormalZ', 'GroupID'
-
         """
         facets_ = self.triangle_info.loc[
             (self.triangle_info[['Vertex0']].values == index) | (self.triangle_info[['Vertex1']].values == index) |
             (self.triangle_info[['Vertex2']].values == index)]
         return facets_
 
-    def __update(self, mesh_):
+    def __update(self, mesh_: Union[pv.PolyData, pv.UnstructuredGrid]) -> None:
+        """
+        Updates the CartoMesh to match the given mesh.
+
+        Args:
+            mesh_: A PyVista mesh of the type PolyData or UnstructuredGrid .
+
+        Returns:
+            None: Nothing. Updates the mesh.
+        """
         self.mesh = mesh_
         self.points = mesh_.points
         self.n_points = len(self.points)
@@ -191,21 +245,31 @@ class CartoMesh:
             self.triangles = None
             self.n_triangles = 0
 
-    def __readSettings(self):
+    def __readSettings(self) -> None:
+        """
+        Reads the settings.ini file and updates the CartoMesh accordingly.
+
+        Returns:
+            None: Nothing. Updates the mesh settings attribute.
+        """
         assert os.path.exists("settings.ini"), "No settings.ini file found"
-        config = configparser.ConfigParser()
+        config = configparser.ConfigParser(inline_comment_prefixes='#')
         config.read('settings.ini')
         for section in config.sections():
             self.settings[section.lower()] = {key: eval(val) for key, val in config[section].items()}
 
     def writeEndoEpi(self, thickness: float, ratio: float) -> None:
-        """Reads in .csv files from carto2csv.py, calculates normals of mesh facets and adds two layers of points
+        """
+        Reads in .csv files from carto2csv.py, calculates normals of mesh facets and adds two layers of points
         along these normals: the epi- and endocardium. Writes out these two layers as .txt files.
+
         Args:
             thickness: the distance between the inner (endo) and outer (epi) layer
+
             ratio: the ratio of distances from both layers to the original middle layer. A ratio of .8 will add an outer
             layer .8*thickness from the middle and an inner layer .2*thickness to the inside. Ratios > .5 are
             recommended to avoid self intersections.
+
         Returns:
             Nothing. Writes out two files: endo.txt and epi.txt
         """
@@ -236,14 +300,19 @@ class CartoMesh:
         tqbar.close()
 
     def splitLayer(self, thickness: float = .5, ratio: float = .8) -> None:
-        """Calls upon writeEndoEpi() to write 'endo.txt' and 'epi.txt': two files containing the point coordinates of
+        """
+        Calls upon :func:`writeEndoEpi` to write 'endo.txt' and 'epi.txt': two files containing the point coordinates of
         the bounding mesh layers. These are read in again and used to construct two surface meshes. These two
         surface meshes are added together as one mesh. The class properties are updated to these points and faces.
+
         Args:
             thickness: the distance between the inner (endo) and outer (epi) layer
+
             ratio: the ratio of distances from both layers to the original middle layer. A ratio of .8 will add an outer
             layer .8*thickness from the middle and an inner layer .2*thickness to the inside. Ratios > .5 are
             recommended to avoid self intersections.
+        Returns:
+            Nothing
         """
         if not os.path.exists(self.dir + 'endo.txt') or not os.path.exists(self.dir + 'epi.txt'):
             self.writeEndoEpi(thickness, ratio)
@@ -261,18 +330,23 @@ class CartoMesh:
         self.mesh = fullmesh
 
     def cleanMesh(self, tol: float, max_iter: int = 10, print_si: bool = True) -> pv.PolyData:
-        """Calls upon PyVista's built-in clean method to clean the mesh. Afterwards, calls upon PyMesh's
+        """
+        Calls upon PyVista's built-in clean method to clean the mesh. Afterwards, calls upon PyMesh's
         built-in methods remove_degenerated_triangles() and detect_self_intersection() to remove
         duplicated faces and triangles, and resolve self-intersections.
+
         Args:
             tol: tolerance passed to PyVista's built-in clean() method (absolute tolerance)
+
             max_iter: max amount of iterations PyMesh is allowed to try and fix self-intersections,
             duplicate faces and duplicate vertices.
+
             print_si: print the progress of fixing self-intersections
+
         Returns:
-            PyVista PolyData: The cleaned mesh"""
-        mesh_ = self.mesh.clean(lines_to_points=True, polys_to_lines=True,
-                                tolerance=tol, absolute=True)
+            PyVista PolyData: The cleaned mesh
+        """
+        mesh_ = self.mesh.clean(lines_to_points=True, polys_to_lines=True, tolerance=tol, absolute=True)
         mesh_ = makePyMesh(mesh_)
         mesh_, info = pm.remove_degenerated_triangles(mesh_)
         si = len(pm.detect_self_intersection(mesh_))
@@ -299,8 +373,17 @@ class CartoMesh:
         self.triangle_info = pd.DataFrame()
         return mesh_
 
-    def getEdgeLengths(self, mesh=None) -> np.ndarray:
-        """Gets all edge lengths from a PyMesh mesh (used in homogenizeMesh())"""
+    def getEdgeLengths(self, mesh: Union[pm.Mesh, bool] = None) -> np.ndarray:
+        """
+        Gets all edge lengths. If a mesh is given, the mesh must be a PyMesh Mesh object. If no mesh is given (default),
+        the CartoMesh's mesh attribute is used (PyVista PolyData or UnstructuredGrid)
+
+        Args:
+            mesh: A PyMesh Mesh object. Default: None
+
+        Returns:
+            np.ndarray: An array containing the edge lengths of te mesh.
+        """
         edges = mesh.extract_all_edges() if mesh else self.edges
         pmedges = pvToPmCells(edges.extract_cells(range(edges.n_cells)).cells)  # extract edge ind as cells
         distances = []
@@ -311,26 +394,113 @@ class CartoMesh:
 
     def homogenizeMesh(self, nsteps=10, boxplot=False, return_dist=False,
                        edge_range=(600., 1000.)) -> pv.PolyData:
-        """ Iteratively splits long edges and collapses short edges until they all have a length between
-        min_edge and max_edge"""
+        """
+        Iteratively splits long edges and collapses short edges until they all have a length between
+        min_edge and max_edge
 
-        # Keep in mind that max allowed distance in split_long_edges should be about twice
-        # the tolerance in order to get converging behaviour, since short edges become
-        # at least twice as big as tolerance. Setting max_edge < 2 * min_edge wastes some
-        # computational time, but can be useful in case the input mesh has self-intersections.
+        Args:
+            nsteps: Amount of steps to take to iteratively adapt the mesh edge lengths
 
-        min_edge, max_edge = edge_range
+            boxplot: Make a boxplot of the mesh edge lengths for each iteration step after the refinement procedure.
 
-        def calcAlpha(n_, nsteps_, max_edge_, longest_edge_):
-            """Calculate the longest allowed edge length (alpha) for a given iteration step.
+            return_dist: Return a 2xnsteps array of the mesh edge lengths
+
+            edge_range: Minimum and maximum allowed edge lengths
+
+        Returns:
+            Union(PolyData, Tuple[PolyData, List]): Either the refined surface mesh in PyVista's PolyData format, or both the refined mesh and a list containing all the edge lengths for each iteration step.
+        """
+
+        def calcAlpha(n_: int, nsteps_: int, max_edge_: float, longest_edge_: float) -> float:
+            """
+            Calculate the longest allowed edge length (alpha) for a given iteration step.
             Alpha drops exponentially as the iterations progress. At step 0, alpha equals the
-            longest edge of the input mesh. At the final step, alpha equals the maximum desired edge length."""
+            longest edge of the input mesh. At the final step, alpha equals the maximum desired edge length.
+
+            Args:
+                n_: Current iteration step
+
+                nsteps_: Total amount of iteration steps
+
+                max_edge_: Maximum allowed edge length at final iteration step
+
+                longest_edge_: The longest edge length of the input mesh before any refinement
+
+            Returns:
+                float: The longest allowed edge length for the current iteration step
+            """
             return (1 - n_ / nsteps_) * longest_edge_ * np.exp(-3. * n_ / nsteps_) + max_edge_
 
-        def calcTol(n_, nsteps_, min_edge_):
-            """Calculate the shortest allowed edge for a given iteration step"""
+        def calcTol(n_: int, nsteps_: int, min_edge_: float) -> float:
+            """
+            Calculate the shortest allowed edge for a given iteration step.
+            The shortest allowed edge augments linearly as the iteration steps progress.
+
+            Args:
+                n_: Current iteration step
+
+                nsteps_: Total amount of iteration steps
+
+                min_edge_: Minimum allowed edge length at the final iteration step.
+
+            Returns:
+                float: The minimum allowed edge length for the current iteration step.
+            """
             return 500. * (1 - n_ / nsteps_) + min_edge_  # min edge length drops linearly
 
+        def plotEdgelengths(dist_range: np.ndarray, show: bool = True, save: bool = True) -> None:
+            """
+            Plots a boxplot of the edge lengths at each iteration step
+            dist_range should be a 2D array, each array entry containing all the edge lengths at
+            an iteration step
+
+            Args:
+                dist_range: An NxM array containing the mesh edge lengths for each iteration step, where M is the amount
+                of mesh edges at iteration step N.
+
+                show: Show the plot. Default = True
+
+                save: Save the plot. Default = True
+
+            Returns:
+                None: Nothing
+            """
+            plt.style.use('fivethirtyeight')
+            medians = [np.median(d) for d in dist_range]
+            means = [np.mean(d) for d in dist_range]
+            sigmas = [np.sqrt(v) for v in [np.var(d) for d in dist_range]]
+
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.set_ylabel("Edge length (µm)", size=22)
+            ax.set_xlabel("Iteration step", size=22)
+            plt.tight_layout(pad=1.8, h_pad=1.8)
+            ax.fill((.5, nsteps + 1.5, nsteps + 1.5, .5), (max_edge, max_edge, min_edge, min_edge), color=colors[0],
+                    alpha=.3, label='Desired edgelength\n({} - {} µm)'.format(min_edge, max_edge))
+            plt.axhline(max_edge, color='black', lw=2.5)
+            plt.axhline(min_edge, color='black', lw=2.5)
+            polygonx = [.88] + list(range(2, nsteps + 2)) + list(reversed(range(2, nsteps + 2))) + [.88]
+            polygony = [m + s for m, s in zip(means, sigmas)] + \
+                       list(reversed([m - s for m, s in zip(means, sigmas)]))
+            # ax.fill(polygonx, polygony, color=colors[0], alpha=.2, label="mean $\pm$ $\sigma$")
+            ax.boxplot(dist_range, labels=range(len(dist_range)), whis=[0, 100],
+                       boxprops=dict(color="gray", linewidth=2.5),
+                       medianprops=dict(color="gray", linewidth=2.5),
+                       whiskerprops=dict(color="gray", linewidth=2.5),
+                       capprops=dict(color="gray", linewidth=2.5), zorder=1)
+            ax.plot(range(1, nsteps + 2), [calcAlpha(step) for step in range(nsteps + 1)], color=colors[1],
+                    )  # xaxis needs to be shifted by one for matplotlib bullshit reasons, hence range(1, nsteps+2)
+            ax.plot(range(1, nsteps + 2), [calcTol(step) for step in range(nsteps + 1)], color=colors[1],
+                    label=r'$\alpha$ and tolerance')
+            ax.set_title("Mesh edge lengths during refinement", size=28)
+            ax.legend(loc="upper right", prop={'size': 20})
+            ax.tick_params(axis='x', labelsize=18)
+            ax.tick_params(axis='y', labelsize=18)
+            if show:
+                plt.show()
+            if save:
+                fig.savefig("../Plots/EdgeLengthRefinement_{}-{}.png".format(min_edge, max_edge), dpi=300)
+
+        min_edge, max_edge = edge_range
         edge_lengths = self.getEdgeLengths()
         longest_edge = np.max(edge_lengths)
         mesh_ = makePyMesh(self.mesh)
@@ -348,46 +518,8 @@ class CartoMesh:
                 dist_range.append(self.getEdgeLengths(mesh_))
 
         if boxplot:
-            def plotEdgelengths(dist_range, show=True, save=True):
-                """Plots a boxplot of the edge lengths at each iteration step
-                dist_range should be a 2D array, each array entry containing all the edge lengths at
-                an iteration step"""
-                plt.style.use('fivethirtyeight')
-                medians = [np.median(d) for d in dist_range]
-                means = [np.mean(d) for d in dist_range]
-                sigmas = [np.sqrt(v) for v in [np.var(d) for d in dist_range]]
-
-                fig, ax = plt.subplots(figsize=(8, 6))
-                ax.set_ylabel("Edge length (µm)", size=22)
-                ax.set_xlabel("Iteration step", size=22)
-                plt.tight_layout(pad=1.8, h_pad=1.8)
-                ax.fill((.5, nsteps + 1.5, nsteps + 1.5, .5), (max_edge, max_edge, min_edge, min_edge), color=colors[0],
-                        alpha=.3, label='Desired edgelength\n({} - {} µm)'.format(min_edge, max_edge))
-                plt.axhline(max_edge, color='black', lw=2.5)
-                plt.axhline(min_edge, color='black', lw=2.5)
-                polygonx = [.88] + list(range(2, nsteps + 2)) + list(reversed(range(2, nsteps + 2))) + [.88]
-                polygony = [m + s for m, s in zip(means, sigmas)] + \
-                           list(reversed([m - s for m, s in zip(means, sigmas)]))
-                # ax.fill(polygonx, polygony, color=colors[0], alpha=.2, label="mean $\pm$ $\sigma$")
-                ax.boxplot(dist_range, labels=range(len(dist_range)), whis=[0, 100],
-                           boxprops=dict(color="gray", linewidth=2.5),
-                           medianprops=dict(color="gray", linewidth=2.5),
-                           whiskerprops=dict(color="gray", linewidth=2.5),
-                           capprops=dict(color="gray", linewidth=2.5), zorder=1)
-                ax.plot(range(1, nsteps + 2), [calcAlpha(step) for step in range(nsteps + 1)], color=colors[1],
-                        )  # xaxis needs to be shifted by one for matplotlib bullshit reasons, hence range(1, nsteps+2)
-                ax.plot(range(1, nsteps + 2), [calcTol(step) for step in range(nsteps + 1)], color=colors[1],
-                        label=r'$\alpha$ and tolerance')
-                ax.set_title("Mesh edge lengths during refinement", size=28)
-                ax.legend(loc="upper right", prop={'size': 20})
-                ax.tick_params(axis='x', labelsize=18)
-                ax.tick_params(axis='y', labelsize=18)
-                if show:
-                    plt.show()
-                if save:
-                    fig.savefig("../Plots/EdgeLengthRefinement_{}-{}.png".format(min_edge, max_edge), dpi=300)
-
             plotEdgelengths(dist_range)
+
         print("\tCleaning mesh...")
         mesh_ = cleanMesh(makePyVista(mesh_), tol=min_edge / 3., iter=6)
         self.__update(mesh_)
@@ -398,13 +530,29 @@ class CartoMesh:
         return mesh_  # return final version of mesh
 
     def tetrahedralise(self, switches, n_col_retry=3) -> None:
+        """
+        Runs TetGen as a bash command.
+
+        Args:
+            switches: Switches to use with the TetGen command. See https://www.wias-berlin.de/software/tetgen/switches.html
+
+            n_col_retry: Amount of times to attempt to fix collinearities during the TetGen process.
+
+        Returns:
+            None: Nothing. Writes out a .vtk file.
+        """
         def runTetGen(name: str, switches_: str) -> [[int, int]]:
-            """Runs TetGen in terminal and captures output.
+            """
+            Runs TetGen in terminal and captures output.
+
             Args:
                 name: name of the base file
+
                 switches_: Switches to be used together with TetGen bash command.
+
             Returns:
-                """
+                [[int, int]]: A list containing pairs of indices. These pairs define a mesh segment that's colinear.
+            """
             cwd = os.getcwd()
             os.chdir(self.dir)
             tetcommand = "tetgen {} {}.smesh".format(switches_, name)
@@ -444,8 +592,14 @@ class CartoMesh:
             i += 1
 
     def extractMyoAndNonMyo(self) -> Tuple[pv.PolyData, pv.PolyData]:
-        """Checks scalar data of current mesh (clinical tags). Returns two point clouds: one of myocardium and one
-        that's everything but myocardium"""
+        """
+        Checks scalar data of the mesh in its current state (clinical tags) and extracts the part of the mesh with
+        tags that correspond to myocardium (tag == 0).
+
+        Returns:
+            Tuple[pv.PolyData, pv.PolyData]: A tuple containing two PyVista PolyData meshes: a pointcloud of points
+            corresponding to the mesh myocardium and a pointcloud of the rest of the mesh.
+        """
         myo = pv.PolyData()
         noncond = pv.PolyData()
         for tag in np.unique(self.mesh['color']):
@@ -457,36 +611,50 @@ class CartoMesh:
         return myo, noncond
 
     def writeTags(self) -> None:
-        """Writes out all points in a mesh with a certain tag to a .csv file"""
+        """
+        Writes out all points in a mesh with a certain tag to a .csv file
+
+        Returns:
+            None: Nothing. Writes out .csv files.
+        """
         for tag in self.mesh['color'].unique():
             tagged_pointcloud = self.mesh.points[[self.mesh['color'] == tag]]
             with open(self.dir + "Tag_{}.csv".format(tag), 'w+') as of:
                 csvWriter = csv.writer(of, delimiter=',')
                 csvWriter.writerows(tagged_pointcloud)
 
-    def getNonMyoIndices(self) -> [int]:
-        if self.non_myo.npoints:
-            self.non_myo["speed"] = self.non_myo.n_points * [0.]
-            self.myo["speed"] = self.myo.n_points * [1.]
-            c = self.non_myo + self.myo  # a mask that is 1 where the carto point is myocardium
-            # for each meshpoint, find closest carto point
-            tree = nb.KDTree(c.points)
-            distances, indices = tree.query(self.mesh.points, k=1)  # these are c indices for each meshpoint
-            nc_mesh_ind = [ind for ind in range(len(indices)) if c["speed"][indices[ind]] == 0.]
-        else:
-            nc_mesh_ind = []
-        return nc_mesh_ind
-
     def writeAdjustNa2(self, tol: float = 1e-5, g_Na: float = 7.8, write_dat: bool = True) -> None:
-        """Writes adjustment file to close off Na2+ channels in cells where CV ~ 0
+        """
+        Writes adjustment file to close off Na2+ channels in cells where CV ~ 0
+
         Args:
-            tol: tolerance for when a point is considered to have a conduction velocity of 0. Points whose conduction velocity < tol are considered to be zero.
-            g_Na: value for (maximum) Sodium channel conductance. Open Na-channels are set to this conductance. Default: 7.8 pS
+            tol: tolerance for when a point is considered to have a conduction velocity of 0. Points whose
+            conduction velocity < tol are considered to be zero.
+
+            g_Na: value for (maximum) Sodium channel conductance. Open Na-channels are set to this conductance.
+            Default: 7.8 pS
+
             write_dat: write a .dat file for visual inspection in e.g. meshalyzer.
+
         Returns:
-            None: Nothing. Writes out a .txt file and, if wanted, a .dat file"""
+            None: Nothing. Writes out a .txt file and, if wanted, a .dat file
+        """
 
         def writeDat(d: str, mesh: pv.PolyData, name: str = "gNA2") -> None:
+            """
+            Write a .dat file. This file is a column of 0s and 1s. The index column corresponds to the mesh point index.
+            If the value equals to one on row i, then mesh.points[i] is a point whose Na2+ channel has been closed off.
+
+            Args:
+                d: Directory to write .dat file to
+
+                mesh: A Pyvista PolyData mesh
+
+                name: Name of the .dat file, without file extension. Default = 'gNA2'
+
+            Returns:
+                None: Nothing. Writes out .dat file <name>.dat
+            """
             datfile = open(d + name + ".dat", "w+")
             dat = np.zeros(mesh.n_points)
             dat[ptn == 0.] = 1
@@ -494,7 +662,7 @@ class CartoMesh:
                 datfile.write(str(e) + '\n')
             datfile.close()
 
-        assert self.mesh.cells or self.mesh.triangles, "Mesh does not contain any cells or triangles."
+        assert self.mesh.n_cells or self.mesh.n_triangles, "Mesh does not contain any cells or triangles."
         cells = pvToPmCells(self.mesh.cells) if self.cells else pvToPmCells(self.mesh.triangles)
         speed = self.mesh["speed"]
 
@@ -514,12 +682,21 @@ class CartoMesh:
             writeDat(self.dir, self.mesh, "gNA2")
 
     def setNonCondByIndexFiles(self, region_dir='Regions', write_dat=False, index_col="meshID") -> None:
-        """Opens directory region_dir and reads in .csv files there. These .csv files should contain the indices of
+        """
+        Opens directory region_dir and reads in .csv files there. These .csv files should contain the indices of
         points whose conduction velocity should be set to zero.
         Writes out a .dat file for each .csv file if wanted
+
         Args:
-            region_dir: Name of directory containing the regions to be set to a conduction velocity of 0. These regions should be .csv files containing the indices of points to be set to CV=0
-            index_col: Name of the column in the .csv files that contain the point indices. Default=\"meshID\" for easy workflow in correspondence with mesh_tools.ptsToParaview()"""
+            region_dir: Name of directory containing the regions to be set to a conduction velocity of 0.
+            These regions should be .csv files containing the indices of points to be set to CV=0
+
+            index_col: Name of the column in the .csv files that contain the point indices.
+            Default=\"meshID\" for easy workflow in correspondence with :func:`mesh_tools.ptsToParaview`
+
+        Returns:
+            None: Nothing
+        """
 
         def writeDat(data: pd.DataFrame, n_points, name):
             """Writes a .dat file for a given pd.DataFrame"""
@@ -549,9 +726,41 @@ class CartoMesh:
 
     def applyCV(self, speed_file='speed.csv',
                 write_csv=False, write_VTK_file=False, write_txt=True, write_dat=False, write_xyz=False,
-                outdir='scale_factors/'):
+                outdir='scale_factors/', region_dir='', ncv=None, speed_col="speed"):
+        """
+        Applies conduction velocities on a reconstructed tetrahedralised carto mesh.
+
+        Args:
+            speed_file: Name of the file containing the coordinates and conduction velocity values to interpolate.
+
+            write_csv: Write out the coordinates and speeds to a .csv file
+
+            write_VTK_file: Write out the resulting mesh to .vtk
+
+            write_txt: Write out the conduction velocities as scale factors (readable by OpenCARP) to <outdir>
+
+            write_dat: Write out the regions of the mesh with CV=0 to .dat file, to visualize in Meshalyzer
+            write_xyz: Write point cloud of the conduction velocites, as interpolated on the mesh
+            outdir: Name of the directory to contain the scale factors aka conduction velocities
+            region_dir: Name of the directory containing .csv files with indices of mesh points whose conduction velocity will be set to 0.
+
+        Returns:
+            None: Nothing. Writes out one or more of the following files in <outdir>: .csv, .vtk, .txt, .dat or a
+            pointcloud .csv file if <write_xyz> == True.
+        """
 
         def applySpeedLimit(data_: pd.DataFrame, limit: tuple, speed_col: str = 'speed') -> pd.DataFrame:
+            """
+            Given a DataFrame, cuts off all conduction velocities whose conduction velocity in the column <speed_col>
+            have a value outside the range of <limit>
+            Args:
+                data_: The DataFrame containing the conduction velocities
+                limit: The minimum and maximum allowed conduction velocities as a tuple with length 2
+                speed_col: Name of the DataFrame column containing the conduction velocities. Default = 'speed'
+
+            Returns:
+                DataFrame: DataFrame whose conduction velocities in the column <speed_col> have been cut off to match <speed_col>
+            """
             speeds = data_[speed_col]
             for i in range(len(speeds)):
                 s = speeds[i]
@@ -571,7 +780,7 @@ class CartoMesh:
                 n_neighbors: amount of neighbors to use for each normal distribution fitting.
                 speed_col: name of the column containing the conduction velocity values for each mesh point.
             Returns:
-                pd.DataFrame: DataFrame containing the original point coordinates and updated conduction velocities"""
+                DataFrame: DataFrame containing the original point coordinates and updated conduction velocities"""
             print("\n\t#### Variation ", n)
             # tweak conduction velocities of input CV file
             points = data_[["x", "y", "z"]].values
@@ -587,6 +796,11 @@ class CartoMesh:
             data_[speed_col] = speeds
             return data_
 
+        if not ncv:
+            n_cv = self.settings['reconstruction_parameters']['n_cv']
+        else:
+            n_cv = ncv
+
         # read in data
         input_data = pd.read_csv(self.dir + speed_file,
                                  usecols=["speed", "x", "y", "z"])
@@ -595,7 +809,7 @@ class CartoMesh:
         # create new dataframe for mutable purposes
         calculated_data = input_data
 
-        for n in range(self.settings['cv_interpolation_parameters']['n_variations']):
+        for n in range(n_cv):
             if n != 0:  # variations of conduction velocities
                 calculated_data = randomizeCV(calculated_data,
                                               n_neighbors=self.settings['cv_interpolation_parameters']['n_neighbors'])
@@ -610,7 +824,11 @@ class CartoMesh:
             mesh = self.mesh.interpolate(pvdata, radius=self.settings['cv_interpolation_parameters']['radius'],
                                          sharpness=self.settings['cv_interpolation_parameters']['sharpness'],
                                          strategy="null_value", null_value=med_speed,
-                                         pass_point_arrays=False, pass_cell_arrays=False)
+                                         pass_cell_arrays=False)
+            self.__update(mesh)  # set mesh
+            if region_dir:
+                print("\tSetting regions to 0 conduction velocity")
+                self.setNonCondByIndexFiles(region_dir, write_dat)
 
             pointdata = mesh["speed"]
             mesh = mesh.ptc()  # point data to cell data
@@ -661,29 +879,33 @@ class CartoMesh:
                 pv.save_meshio(self.dir + "{}_CV{}.vtk".format(self.name, n), self.mesh)
 
     def reconstruct(self) -> None:
-        """Reads in .mesh file and writes out a refined tetrahedron mesh in .vtk format and carp format.
+        """
+        Reads in .mesh file and writes out a refined tetrahedron mesh in .vtk format and carp format.
         If 'speed.csv' exists in the cwd, also interpolates these speeds on the mesh. speed.csv should be a csv file with
         columns 'x', 'y', 'z' and 'speed', where the xyz coordinates refer to point coordinates. Can be calculated with
         DGM.
 
         Args:
-          ncv: amount of conduction velocity distributions to make. The first one corresponds to the original distribution.
-          edge_range: The desired values for the shortest and longest mesh edge length in µm
-          refine_steps: Amount of times the mesh edges will be split and collapsed in homogenizeMesh()
-          switches: The switches used in the TetGen command to tetrahedralize a mesh.
-          boxplot: Keep track of the edge length distribution during homogenizeMesh() and plot a boxplot afterwards.
-          keep_intmed: Keep files that were generated during the reconstruction process. These include .csv files from
-          self.__cartoToCsv() and files generated by TetGen in tetrahedralise().
-          n_col: Amount of times collinearities will be fixed during the tetrahedralisation process.
 
         Returns:
           Nothing.
           Writes out a .vtk file of the tetrahedron mesh. Writes out the same mesh in Carp text format.
           Updates the mesh to the tetrahedron mesh.
-
         """
 
         def getPipeline(self_, boxplot, switches, refine_steps, min_edge, max_edge, n_cv, n_col_retry, keep_intmed):
+            """Given a set of parameters, generate the functions with corresponding parameters to reconstruct
+            a carto mesh from zero to simulation-ready.
+            Args:
+                self_: self
+                boxplot: bool: Whether or not to make a boxplot of the edgelengths during refinement in :func:`homogenizeMesh`
+                switches: str: The switches used in the tetgen command
+                refine_steps: int: amount of refinement steps during :func:`homogenizeMesh`
+                min_edge: float: Minimum allowed edge length
+                max_edge: float: Maximum allowed edge length
+                n_cv: int: Amount of conduction velocity distribution files to make.
+                n_col_retry: int: Amount of times you want to try to fix colinearities during TetGen command.
+                keep_intmed: bool: Unused. For completeness."""
             pipeline_ = OrderedDict([
                 (
                     "Adding endo and epi point layers",
@@ -759,13 +981,13 @@ class CartoMesh:
         print("\n\tMesh reconstructed in {0}m {1:.2f}s".format(int(duration // 60), duration % 60))
         self.__update(pv.read(self.dir + self.name + '.1.vtk'))
 
-    def plot(self):
-        """Plots the mesh in its current state using PyVista's Plotter() method."""
+    def plot(self) -> None:
+        """
+        Plots the mesh in its current state using PyVista's Plotter() method.
+
+        Returns:
+            None: Nothing. Opens a VtkRenderer window to show the plot.
+        """
         p = pv.Plotter()
         p.add_mesh(self.mesh)
         p.show()
-
-
-if __name__ == '__main__':
-    m = CartoMesh('Test_Meshes/OC59')
-    m.reconstruct()
