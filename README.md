@@ -1,5 +1,5 @@
 # Reconstruct_CARTO
-Reconstructs a simulatable 3D mesh from clinical CARTO mapping data, providing control over mesh resolution, 
+This repository provides code capable of reconstructing a simulatable 3D mesh from clinical CARTO mapping data, providing control over mesh resolution, 
 conduction velocity distributions and non-conductive regions.
 
 <p align="center">
