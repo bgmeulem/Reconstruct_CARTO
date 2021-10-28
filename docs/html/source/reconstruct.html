@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2D2D2D" />
+  
+  <title>Reconstruct CARTO :: reconstruct module</title>
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="../_static/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../_static/img/favicon-16x16.png">
+  <link rel="index" title="Index" href="../genindex.html"/>
+
+  <link rel="stylesheet" href="../_static/css/insegel.css"/>
+  <link rel="stylesheet" href="../_static/css/custom.css"/>
+
+  <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+  
+
+  <script src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+  <div id="insegel-container">
+    <header>
+      <div id="logo-container">
+          
+          <a href="../index.html"><img src="../_static/cv.png"></a>
+          
+      </div>
+      <div id="project-container">
+        
+        <h1>Reconstruct CARTO Documentation</h1>
+        
+      </div>
+    </header>
+
+    <div id="content-container">
+
+      <div id="main-content-container">
+        <div id="main-content" role="main">
+          
+  <div class="section" id="module-reconstruct">
+<span id="reconstruct-module"></span><h1>reconstruct module<a class="headerlink" href="#module-reconstruct" title="Permalink to this headline">¶</a></h1>
+<p>This is a runfile to reconstruct an input carto mesh to a simulatable mesh.</p>
+<p>It’s purpose is to provide easy access or terminal-level access to reconstruct a .mesh file.
+It uses the <a class="reference internal" href="carto_mesh.html#carto_mesh.CartoMesh" title="carto_mesh.CartoMesh"><code class="xref py py-class docutils literal notranslate"><span class="pre">CartoMesh</span></code></a> class from the <a class="reference internal" href="carto_mesh.html#module-carto_mesh" title="carto_mesh"><code class="xref py py-mod docutils literal notranslate"><span class="pre">carto_mesh</span></code></a> module along with its dependencies.
+If you like more control over this reconstruction process than the <code class="docutils literal notranslate"><span class="pre">settings.ini</span></code> file and the runfiles
+<a class="reference internal" href="#module-reconstruct" title="reconstruct"><code class="xref py py-mod docutils literal notranslate"><span class="pre">reconstruct</span></code></a> and <a class="reference internal" href="apply_cv.html#module-apply_cv" title="apply_cv"><code class="xref py py-mod docutils literal notranslate"><span class="pre">apply_cv</span></code></a>, then you can also <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">carto_mesh</span> <span class="pre">import</span> <span class="pre">*</span></code> in python and use the class as you please.</p>
+<p>If a speed.csv file is present in the same folder as the carto mesh and N_CV &gt; 1 in <code class="docutils literal notranslate"><span class="pre">settings.ini</span></code>, then these speeds
+will be interpolated on the mesh.</p>
+<p>If you want to apply conduction velocities after the mesh reconstruction (e.g. in case you want to select
+non-conductive regions on the mesh <em>after</em> reconstruction), you must set N_CV = 0 in <code class="docutils literal notranslate"><span class="pre">settings.ini</span></code>, reconstruct,
+reset N_CV to a value of choice and run <a class="reference internal" href="apply_cv.html#module-apply_cv" title="apply_cv"><code class="xref py py-mod docutils literal notranslate"><span class="pre">apply_cv</span></code></a> with arguments of your choice.</p>
+<p>This file can reconstruct an input Carto .mesh file when run in the terminal.
+The command line arguments can be requested by running <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">reconstruct.py</span> <span class="pre">-h</span></code>, but are also listed below.
+These arguments overwrite any setting defined in <code class="docutils literal notranslate"><span class="pre">settings.ini</span></code></p>
+<dl>
+<dt>Args:</dt><dd><p>name: name of the input carto .mesh file or its parent directory.
+Default: the first .mesh file found in the given directory.</p>
+<p>–speed_file (optional): name of the .csv file containing columns ‘x’, ‘y’, ‘z’ and ‘speed’.
+The conduction velocities as defined in this file will be interpolated on the finalised reconstructed mesh.</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="reconstruct.run">
+<span class="sig-prename descclassname"><span class="pre">reconstruct.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed_file</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/reconstruct.html#run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#reconstruct.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstructs an input carto .mesh file.
+Args:</p>
+<blockquote>
+<div><p>meshname: Name of the .mesh file to reconstruct, or name of the directory containing this file.
+speed_file: Name of the file containing the coordinates and conduction velocity values to interpolate, if this is wanted.</p>
+</div></blockquote>
+<p>Returns:</p>
+</dd></dl>
+
+</div>
+
+
+        </div>
+      </div>
+
+      <div id="side-menu-container">
+
+        <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+        <div id="side-menu" role="navigation">
+
+          
+  
+    
+  
+  
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../generated/carto_mesh.html">carto_mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/mesh_tools.html">mesh_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/reconstruct.html">reconstruct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/apply_cv.html">apply_cv</a></li>
+</ul>
+
+  
+
+
+        </div>
+
+        
+
+      </div>
+
+    </div>
+
+<footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../_sources/source/reconstruct.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2021, Bjorge Meulemeester
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+</div>
+
+</body>
+</html>

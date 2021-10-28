@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2D2D2D" />
+  
+  <title>Reconstruct CARTO :: reconstruct</title>
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="../_static/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../_static/img/favicon-16x16.png">
+  <link rel="index" title="Index" href="../genindex.html"/>
+
+  <link rel="stylesheet" href="../_static/css/insegel.css"/>
+  <link rel="stylesheet" href="../_static/css/custom.css"/>
+
+  <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+  
+
+  <script src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+  <div id="insegel-container">
+    <header>
+      <div id="logo-container">
+          
+          <a href="../index.html"><img src="../_static/cv.png"></a>
+          
+      </div>
+      <div id="project-container">
+        
+        <h1>Reconstruct CARTO Documentation</h1>
+        
+      </div>
+    </header>
+
+    <div id="content-container">
+
+      <div id="main-content-container">
+        <div id="main-content" role="main">
+          
+  <h1>Source code for reconstruct</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This is a runfile to reconstruct an input carto mesh to a simulatable mesh.</span>
+
+<span class="sd">It&#39;s purpose is to provide easy access or terminal-level access to reconstruct a .mesh file.</span>
+<span class="sd">It uses the :class:`~carto_mesh.CartoMesh` class from the :mod:`carto_mesh` module along with its dependencies.</span>
+<span class="sd">If you like more control over this reconstruction process than the ``settings.ini`` file and the runfiles</span>
+<span class="sd">:mod:`reconstruct` and :mod:`apply_cv`, then you can also ``from carto_mesh import *`` in python and use the class as you please.</span>
+
+<span class="sd">If a speed.csv file is present in the same folder as the carto mesh and N_CV &gt; 1 in ``settings.ini``, then these speeds</span>
+<span class="sd">will be interpolated on the mesh.</span>
+
+<span class="sd">If you want to apply conduction velocities after the mesh reconstruction (e.g. in case you want to select</span>
+<span class="sd">non-conductive regions on the mesh *after* reconstruction), you must set N_CV = 0 in ``settings.ini``, reconstruct,</span>
+<span class="sd">reset N_CV to a value of choice and run :mod:`apply_cv` with arguments of your choice.</span>
+
+<span class="sd">This file can reconstruct an input Carto .mesh file when run in the terminal.</span>
+<span class="sd">The command line arguments can be requested by running ``python reconstruct.py -h``, but are also listed below.</span>
+<span class="sd">These arguments overwrite any setting defined in ``settings.ini``</span>
+
+<span class="sd">Args:</span>
+<span class="sd">    name: name of the input carto .mesh file or its parent directory.</span>
+<span class="sd">    Default: the first .mesh file found in the given directory.</span>
+
+<span class="sd">    --speed_file (optional): name of the .csv file containing columns &#39;x&#39;, &#39;y&#39;, &#39;z&#39; and &#39;speed&#39;.</span>
+<span class="sd">    The conduction velocities as defined in this file will be interpolated on the finalised reconstructed mesh.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">carto_mesh</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../source/reconstruct.html#reconstruct.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="n">meshname</span><span class="p">,</span> <span class="n">speed_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reconstructs an input carto .mesh file.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        meshname: Name of the .mesh file to reconstruct, or name of the directory containing this file.</span>
+<span class="sd">        speed_file: Name of the file containing the coordinates and conduction velocity values to interpolate, if this is wanted.</span>
+
+<span class="sd">    Returns:</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">carto_mesh</span><span class="o">.</span><span class="n">CartoMesh</span><span class="p">(</span><span class="n">meshname</span><span class="p">)</span>
+    <span class="n">mesh</span><span class="o">.</span><span class="n">reconstruct</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">speed_file</span><span class="p">:</span>
+        <span class="n">mesh</span><span class="o">.</span><span class="n">applyCV</span><span class="p">(</span><span class="n">speed_file</span><span class="p">,</span> <span class="n">write_VTK_file</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;?&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of the carto mesh, or the directory that contains the carto mesh.&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--speed_file&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Name of the file containing coordinates and speed values to interpolate on the mesh, &#39;</span>
+                             <span class="s1">&#39;if this file exists and you want to interpolate these immediately.&#39;</span><span class="p">,</span>
+                        <span class="n">defaul</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+    <span class="n">run</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">speed_file</span><span class="p">)</span>
+</pre></div>
+
+        </div>
+      </div>
+
+      <div id="side-menu-container">
+
+        <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+        <div id="side-menu" role="navigation">
+
+          
+  
+    
+  
+  
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../generated/carto_mesh.html">carto_mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/mesh_tools.html">mesh_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/reconstruct.html">reconstruct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/apply_cv.html">apply_cv</a></li>
+</ul>
+
+  
+
+
+        </div>
+
+        
+
+      </div>
+
+    </div>
+
+<footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2021, Bjorge Meulemeester
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+</div>
+
+</body>
+</html>

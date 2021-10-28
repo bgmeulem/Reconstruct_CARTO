@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2D2D2D" />
+  
+  <title>Reconstruct CARTO :: movie</title>
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="../_static/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../_static/img/favicon-16x16.png">
+  <link rel="index" title="Index" href="../genindex.html"/>
+
+  <link rel="stylesheet" href="../_static/css/insegel.css"/>
+  <link rel="stylesheet" href="../_static/css/custom.css"/>
+
+  <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+  
+
+  <script src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+  <div id="insegel-container">
+    <header>
+      <div id="logo-container">
+          
+          <a href="../index.html"><img src="../_static/cv.png"></a>
+          
+      </div>
+      <div id="project-container">
+        
+        <h1>Reconstruct CARTO Documentation</h1>
+        
+      </div>
+    </header>
+
+    <div id="content-container">
+
+      <div id="main-content-container">
+        <div id="main-content" role="main">
+          
+  <h1>Source code for movie</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;File containing functions to make gif frames showing the mesh transitions.&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">carto_mesh</span> <span class="kn">import</span> <span class="o">*</span>
+
+
+<div class="viewcode-block" id="getSubMesh"><a class="viewcode-back" href="../source/movie.html#movie.getSubMesh">[docs]</a><span class="k">def</span> <span class="nf">getSubMesh</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">n_</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">):</span>
+        <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">y_max</span><span class="p">,</span> <span class="n">z_min</span><span class="p">,</span> <span class="n">z_max</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">bounds</span>
+        <span class="n">cell_centers</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">cell_centers</span><span class="p">()</span><span class="o">.</span><span class="n">points</span>
+        <span class="k">if</span> <span class="n">side</span> <span class="o">==</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">cell_centers</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">x_min</span> <span class="o">+</span> <span class="n">n_</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">side</span> <span class="o">==</span> <span class="s1">&#39;right&#39;</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">cell_centers</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_min</span> <span class="o">+</span> <span class="n">n_</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">)</span>
+        <span class="n">cell_ind</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">submesh</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">extract_cells</span><span class="p">(</span><span class="n">cell_ind</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">submesh</span><span class="p">,</span> <span class="n">submesh</span><span class="o">.</span><span class="n">active_scalars</span></div>
+
+
+<div class="viewcode-block" id="plot2Meshes"><a class="viewcode-back" href="../source/movie.html#movie.plot2Meshes">[docs]</a><span class="k">def</span> <span class="nf">plot2Meshes</span><span class="p">(</span><span class="n">mesh1</span><span class="p">:</span> <span class="n">pv</span><span class="o">.</span><span class="n">PolyData</span><span class="p">,</span> <span class="n">mesh2</span><span class="p">:</span> <span class="n">pv</span><span class="o">.</span><span class="n">PolyData</span><span class="p">,</span> <span class="n">mesh1_params</span><span class="p">,</span> <span class="n">mesh2_params</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">Plotter</span><span class="p">(</span><span class="n">off_screen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">s1</span><span class="p">,</span> <span class="n">scalars</span> <span class="o">=</span> <span class="n">getSubMesh</span><span class="p">(</span><span class="n">mesh1</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="s1">&#39;left&#39;</span><span class="p">)</span>
+    <span class="n">s2</span><span class="p">,</span> <span class="n">scalars2</span> <span class="o">=</span> <span class="n">getSubMesh</span><span class="p">(</span><span class="n">mesh2</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="s1">&#39;right&#39;</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_mesh</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="o">**</span><span class="n">mesh1_params</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">remove_scalar_bar</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">add_mesh</span><span class="p">(</span><span class="n">s2</span><span class="p">,</span> <span class="o">**</span><span class="n">mesh2_params</span><span class="p">)</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">remove_scalar_bar</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+    <span class="n">p</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">screenshot</span><span class="o">=</span><span class="s1">&#39;Frames/</span><span class="si">{}</span><span class="s1">_</span><span class="si">{:.2f}</span><span class="s1">.png&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="n">n</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="writeFrames"><a class="viewcode-back" href="../source/movie.html#movie.writeFrames">[docs]</a><span class="k">def</span> <span class="nf">writeFrames</span><span class="p">(</span><span class="n">mesh1</span><span class="p">,</span> <span class="n">mesh2</span><span class="p">,</span> <span class="n">mesh1_params</span><span class="p">,</span> <span class="n">mesh2_params</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="o">.</span><span class="mi">99</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Writing frames&quot;</span><span class="p">):</span>
+        <span class="n">plot2Meshes</span><span class="p">(</span><span class="n">mesh1</span><span class="p">,</span> <span class="n">mesh2</span><span class="p">,</span> <span class="n">mesh1_params</span><span class="p">,</span> <span class="n">mesh2_params</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="writeFramesCartoToDoubleLayer"><a class="viewcode-back" href="../source/movie.html#movie.writeFramesCartoToDoubleLayer">[docs]</a><span class="k">def</span> <span class="nf">writeFramesCartoToDoubleLayer</span><span class="p">(</span><span class="n">meshname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;BlankMeshes/OC59&#39;</span><span class="p">):</span>
+    <span class="n">mesh1</span> <span class="o">=</span> <span class="n">CartoMesh</span><span class="p">(</span><span class="n">meshname</span><span class="p">)</span>
+    <span class="n">mesh2</span> <span class="o">=</span> <span class="n">CartoMesh</span><span class="p">(</span><span class="n">meshname</span><span class="p">)</span>
+    <span class="n">mesh2</span><span class="o">.</span><span class="n">splitLayer</span><span class="p">()</span>
+    <span class="n">mesh1_params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">mesh2_params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">writeFrames</span><span class="p">(</span><span class="n">mesh1</span><span class="o">.</span><span class="n">mesh</span><span class="p">,</span> <span class="n">mesh2</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">extract_all_edges</span><span class="p">(),</span> <span class="n">mesh1_params</span><span class="p">,</span> <span class="n">mesh2_params</span><span class="p">,</span> <span class="s1">&#39;cartoToDoubleLayer&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="writeFramesRefine"><a class="viewcode-back" href="../source/movie.html#movie.writeFramesRefine">[docs]</a><span class="k">def</span> <span class="nf">writeFramesRefine</span><span class="p">(</span><span class="n">meshname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;BlankMeshes/OC59&#39;</span><span class="p">):</span>
+    <span class="n">mesh1</span> <span class="o">=</span> <span class="n">CartoMesh</span><span class="p">(</span><span class="n">meshname</span><span class="p">)</span>
+    <span class="n">mesh1</span><span class="o">.</span><span class="n">splitLayer</span><span class="p">()</span>
+    <span class="n">mesh2</span> <span class="o">=</span> <span class="n">CartoMesh</span><span class="p">(</span><span class="n">meshname</span><span class="p">)</span>
+    <span class="n">mesh2</span><span class="o">.</span><span class="n">splitLayer</span><span class="p">()</span>
+    <span class="n">mesh2</span><span class="o">.</span><span class="n">homogenizeMesh</span><span class="p">()</span>
+    <span class="n">mesh1_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;clim&#39;</span><span class="p">:</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">mesh1</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">active_scalars</span><span class="p">),</span> <span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;below_color&#39;</span><span class="p">:</span> <span class="s1">&#39;blue&#39;</span><span class="p">,</span> <span class="s1">&#39;above_color&#39;</span><span class="p">:</span> <span class="s1">&#39;red&#39;</span><span class="p">}</span>
+    <span class="n">mesh2_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="s1">&#39;opacity&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">}</span>
+    <span class="n">writeFrames</span><span class="p">(</span><span class="n">mesh1</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">extract_all_edges</span><span class="p">(),</span> <span class="n">mesh2</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">extract_all_edges</span><span class="p">(),</span> <span class="n">mesh1_params</span><span class="p">,</span> <span class="n">mesh2_params</span><span class="p">,</span> <span class="s1">&#39;refine&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="writeFramesTetrahedralise"><a class="viewcode-back" href="../source/movie.html#movie.writeFramesTetrahedralise">[docs]</a><span class="k">def</span> <span class="nf">writeFramesTetrahedralise</span><span class="p">(</span><span class="n">meshname</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;BlankMeshes/OC59&#39;</span><span class="p">):</span>
+    <span class="n">mesh1</span> <span class="o">=</span> <span class="n">CartoMesh</span><span class="p">(</span><span class="n">meshname</span><span class="p">)</span>
+    <span class="n">mesh1</span><span class="o">.</span><span class="n">splitLayer</span><span class="p">()</span>
+    <span class="n">mesh1</span><span class="o">.</span><span class="n">homogenizeMesh</span><span class="p">()</span>
+    <span class="n">mesh2</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;BlankMeshes/OC59/OC59_MV_only_600-1000µm.1.vtk&#39;</span><span class="p">)</span>
+    <span class="n">mesh1_params</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="s1">&#39;opacity&#39;</span><span class="p">:</span> <span class="o">.</span><span class="mi">3</span><span class="p">}</span>
+    <span class="n">mesh2_params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">writeFrames</span><span class="p">(</span><span class="n">mesh1</span><span class="o">.</span><span class="n">mesh</span><span class="o">.</span><span class="n">extract_all_edges</span><span class="p">(),</span> <span class="n">mesh2</span><span class="p">,</span> <span class="n">mesh1_params</span><span class="p">,</span> <span class="n">mesh2_params</span><span class="p">,</span>
+                <span class="s1">&#39;tetrahedralise&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="writeFramesConductionVelocity"><a class="viewcode-back" href="../source/movie.html#movie.writeFramesConductionVelocity">[docs]</a><span class="k">def</span> <span class="nf">writeFramesConductionVelocity</span><span class="p">():</span>
+    <span class="n">mesh1</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;BlankMeshes/OC59/OC59_MV_only_600-1000µm.1.vtk&#39;</span><span class="p">)</span>
+    <span class="n">mesh1_params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">mesh2</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s1">&#39;BlankMeshes/OC59/OC59_MV_only_600-1000µm_CV0.vtk&#39;</span><span class="p">)</span>
+    <span class="n">mesh2_params</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">writeFrames</span><span class="p">(</span><span class="n">mesh1</span><span class="p">,</span> <span class="n">mesh2</span><span class="p">,</span> <span class="n">mesh1_params</span><span class="p">,</span> <span class="n">mesh2_params</span><span class="p">,</span>
+                <span class="s1">&#39;cv&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># writeFramesCartoToDoubleLayer()</span>
+    <span class="c1"># writeFramesRefine()</span>
+    <span class="c1"># writeFramesTetrahedralise()</span>
+    <span class="n">writeFramesConductionVelocity</span><span class="p">()</span>
+</pre></div>
+
+        </div>
+      </div>
+
+      <div id="side-menu-container">
+
+        <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+        <div id="side-menu" role="navigation">
+
+          
+  
+    
+  
+  
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../generated/carto_mesh.html">carto_mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/mesh_tools.html">mesh_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/reconstruct.html">reconstruct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/apply_cv.html">apply_cv</a></li>
+</ul>
+
+  
+
+
+        </div>
+
+        
+
+      </div>
+
+    </div>
+
+<footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2021, Bjorge Meulemeester
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+</div>
+
+</body>
+</html>

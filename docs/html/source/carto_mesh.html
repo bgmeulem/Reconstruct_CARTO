@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2D2D2D" />
+  
+  <title>Reconstruct CARTO :: carto_mesh module</title>
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="../_static/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../_static/img/favicon-16x16.png">
+  <link rel="index" title="Index" href="../genindex.html"/>
+
+  <link rel="stylesheet" href="../_static/css/insegel.css"/>
+  <link rel="stylesheet" href="../_static/css/custom.css"/>
+
+  <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+  
+
+  <script src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+  <div id="insegel-container">
+    <header>
+      <div id="logo-container">
+          
+          <a href="../index.html"><img src="../_static/cv.png"></a>
+          
+      </div>
+      <div id="project-container">
+        
+        <h1>Reconstruct CARTO Documentation</h1>
+        
+      </div>
+    </header>
+
+    <div id="content-container">
+
+      <div id="main-content-container">
+        <div id="main-content" role="main">
+          
+  <div class="section" id="module-carto_mesh">
+<span id="carto-mesh-module"></span><h1>carto_mesh module<a class="headerlink" href="#module-carto_mesh" title="Permalink to this headline">¶</a></h1>
+<p>This file contains the class CartoMesh with all its reconstruction-specific methods.
+This class contains methods for initialising from a .mesh file, plotting, reconstructing and applying conduction velocities.
+This file imports mesh_tools.py for all general mesh functions that are not specific to carto meshes.
+mesh_tools.py also concerns itself with all python imports.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">carto_mesh.</span></span><span class="sig-name descname"><span class="pre">CartoMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class containing functions for initialising from file, plotting, reconstructing and
+applying conduction velocities.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.__cartoToCsv">
+<span class="sig-name descname"><span class="pre">__cartoToCsv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#carto_mesh.CartoMesh.__cartoToCsv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in a carto .mesh file and generates .csv files per header in real-time in the same directory</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>verbose: Use verbose output. Default=True</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out .csv files.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.__getNeighboringFaces">
+<span class="sig-name descname"><span class="pre">__getNeighboringFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="headerlink" href="#carto_mesh.CartoMesh.__getNeighboringFaces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds all mesh facets containing some point.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>index: the index referring to the mesh point.</p>
+</dd>
+<dt>Returns:</dt><dd><p>DataFrame: Pandas DataFrame containing the triangles that have the point at index. The DataFrame
+contains the following columns: ‘Vertex0’, ‘Vertex1’, ‘Vertex2’, ‘NormalX’, ‘NormalY’, ‘NormalZ’, ‘GroupID’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.__initialiseFromFile">
+<span class="sig-name descname"><span class="pre">__initialiseFromFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#carto_mesh.CartoMesh.__initialiseFromFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the class from either a .mesh file or a .vtk file.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>name: The filename (.mesh or .vtk), or the directory containing the .mesh file.</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.__readSettings">
+<span class="sig-name descname"><span class="pre">__readSettings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#carto_mesh.CartoMesh.__readSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads the settings.ini file and updates the CartoMesh accordingly.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>None: Nothing. Updates the mesh settings attribute.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.__readVertTri">
+<span class="sig-name descname"><span class="pre">__readVertTri</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#carto_mesh.CartoMesh.__readVertTri" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads VerticesSection.csv and TrianglesSection.csv files and initializes class</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>None: Nothing. Updates mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.__update">
+<span class="sig-name descname"><span class="pre">__update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh_</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pyvista.core.pointset.PolyData</span><span class="p"><span class="pre">,</span> </span><span class="pre">pyvista.core.pointset.UnstructuredGrid</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#carto_mesh.CartoMesh.__update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the CartoMesh to match the given mesh.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p><a href="#id1"><span class="problematic" id="id2">mesh_</span></a>: A PyVista mesh of the type PolyData or UnstructuredGrid .</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Updates the mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.applyCV">
+<span class="sig-name descname"><span class="pre">applyCV</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">speed_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'speed.csv'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_VTK_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_txt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_dat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_xyz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outdir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'scale_factors/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">region_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">speed_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'speed'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.applyCV"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.applyCV" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies conduction velocities on a reconstructed tetrahedralised carto mesh.</p>
+<dl>
+<dt>Args:</dt><dd><p>speed_file: Name of the file containing the coordinates and conduction velocity values to interpolate.</p>
+<p>write_csv: Write out the coordinates and speeds to a .csv file</p>
+<p>write_VTK_file: Write out the resulting mesh to .vtk</p>
+<p>write_txt: Write out the conduction velocities as scale factors (readable by OpenCARP) to &lt;outdir&gt;</p>
+<p>write_dat: Write out the regions of the mesh with CV=0 to .dat file, to visualize in Meshalyzer
+write_xyz: Write point cloud of the conduction velocites, as interpolated on the mesh
+outdir: Name of the directory to contain the scale factors aka conduction velocities
+region_dir: Name of the directory containing .csv files with indices of mesh points whose conduction velocity will be set to 0.</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out one or more of the following files in &lt;outdir&gt;: .csv, .vtk, .txt, .dat or a
+pointcloud .csv file if &lt;write_xyz&gt; == True.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.cleanMesh">
+<span class="sig-name descname"><span class="pre">cleanMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_si</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pyvista.core.pointset.PolyData</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.cleanMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.cleanMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls upon PyVista’s built-in clean method to clean the mesh. Afterwards, calls upon PyMesh’s
+built-in methods remove_degenerated_triangles() and detect_self_intersection() to remove
+duplicated faces and triangles, and resolve self-intersections.</p>
+<dl>
+<dt>Args:</dt><dd><p>tol: tolerance passed to PyVista’s built-in clean() method (absolute tolerance)</p>
+<p>max_iter: max amount of iterations PyMesh is allowed to try and fix self-intersections,
+duplicate faces and duplicate vertices.</p>
+<p>print_si: print the progress of fixing self-intersections</p>
+</dd>
+<dt>Returns:</dt><dd><p>PyVista PolyData: The cleaned mesh</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.extractMyoAndNonMyo">
+<span class="sig-name descname"><span class="pre">extractMyoAndNonMyo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pyvista.core.pointset.PolyData</span><span class="p"><span class="pre">,</span> </span><span class="pre">pyvista.core.pointset.PolyData</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.extractMyoAndNonMyo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.extractMyoAndNonMyo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks scalar data of the mesh in its current state (clinical tags) and extracts the part of the mesh with
+tags that correspond to myocardium (tag == 0).</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Tuple[pv.PolyData, pv.PolyData]: A tuple containing two PyVista PolyData meshes: a pointcloud of points
+corresponding to the mesh myocardium and a pointcloud of the rest of the mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.getEdgeLengths">
+<span class="sig-name descname"><span class="pre">getEdgeLengths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">pymesh.Mesh.Mesh</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.getEdgeLengths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.getEdgeLengths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets all edge lengths. If a mesh is given, the mesh must be a PyMesh Mesh object. If no mesh is given (default),
+the CartoMesh’s mesh attribute is used (PyVista PolyData or UnstructuredGrid)</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>mesh: A PyMesh Mesh object. Default: None</p>
+</dd>
+<dt>Returns:</dt><dd><p>np.ndarray: An array containing the edge lengths of te mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.homogenizeMesh">
+<span class="sig-name descname"><span class="pre">homogenizeMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nsteps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boxplot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(600.0,</span> <span class="pre">1000.0)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pyvista.core.pointset.PolyData</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.homogenizeMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.homogenizeMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iteratively splits long edges and collapses short edges until they all have a length between
+min_edge and max_edge</p>
+<dl>
+<dt>Args:</dt><dd><p>nsteps: Amount of steps to take to iteratively adapt the mesh edge lengths</p>
+<p>boxplot: Make a boxplot of the mesh edge lengths for each iteration step after the refinement procedure.</p>
+<p>return_dist: Return a 2xnsteps array of the mesh edge lengths</p>
+<p>edge_range: Minimum and maximum allowed edge lengths</p>
+</dd>
+<dt>Returns:</dt><dd><p>Union(PolyData, Tuple[PolyData, List]): Either the refined surface mesh in PyVista’s PolyData format, or both the refined mesh and a list containing all the edge lengths for each iteration step.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the mesh in its current state using PyVista’s Plotter() method.</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>None: Nothing. Opens a VtkRenderer window to show the plot.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.reconstruct">
+<span class="sig-name descname"><span class="pre">reconstruct</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.reconstruct"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.reconstruct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in .mesh file and writes out a refined tetrahedron mesh in .vtk format and carp format.
+If ‘speed.csv’ exists in the cwd, also interpolates these speeds on the mesh. speed.csv should be a csv file with
+columns ‘x’, ‘y’, ‘z’ and ‘speed’, where the xyz coordinates refer to point coordinates. Can be calculated with
+DGM.</p>
+<p>Args:</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>Nothing.
+Writes out a .vtk file of the tetrahedron mesh. Writes out the same mesh in Carp text format.
+Updates the mesh to the tetrahedron mesh.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.setNonCondByIndexFiles">
+<span class="sig-name descname"><span class="pre">setNonCondByIndexFiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Regions'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_dat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'meshID'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.setNonCondByIndexFiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.setNonCondByIndexFiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens directory region_dir and reads in .csv files there. These .csv files should contain the indices of
+points whose conduction velocity should be set to zero.
+Writes out a .dat file for each .csv file if wanted</p>
+<dl>
+<dt>Args:</dt><dd><p>region_dir: Name of directory containing the regions to be set to a conduction velocity of 0.
+These regions should be .csv files containing the indices of points to be set to CV=0</p>
+<p>index_col: Name of the column in the .csv files that contain the point indices.
+Default=”meshID” for easy workflow in correspondence with <a class="reference internal" href="mesh_tools.html#mesh_tools.ptsToParaview" title="mesh_tools.ptsToParaview"><code class="xref py py-func docutils literal notranslate"><span class="pre">mesh_tools.ptsToParaview()</span></code></a></p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.splitLayer">
+<span class="sig-name descname"><span class="pre">splitLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.8</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.splitLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.splitLayer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls upon <a class="reference internal" href="#carto_mesh.CartoMesh.writeEndoEpi" title="carto_mesh.CartoMesh.writeEndoEpi"><code class="xref py py-func docutils literal notranslate"><span class="pre">writeEndoEpi()</span></code></a> to write ‘endo.txt’ and ‘epi.txt’: two files containing the point coordinates of
+the bounding mesh layers. These are read in again and used to construct two surface meshes. These two
+surface meshes are added together as one mesh. The class properties are updated to these points and faces.</p>
+<dl>
+<dt>Args:</dt><dd><p>thickness: the distance between the inner (endo) and outer (epi) layer</p>
+<p>ratio: the ratio of distances from both layers to the original middle layer. A ratio of .8 will add an outer
+layer .8*thickness from the middle and an inner layer .2*thickness to the inside. Ratios &gt; .5 are
+recommended to avoid self intersections.</p>
+</dd>
+<dt>Returns:</dt><dd><p>Nothing</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.tetrahedralise">
+<span class="sig-name descname"><span class="pre">tetrahedralise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">switches</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_col_retry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.tetrahedralise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.tetrahedralise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs TetGen as a bash command.</p>
+<dl>
+<dt>Args:</dt><dd><p>switches: Switches to use with the TetGen command. See <a class="reference external" href="https://www.wias-berlin.de/software/tetgen/switches.html">https://www.wias-berlin.de/software/tetgen/switches.html</a></p>
+<p>n_col_retry: Amount of times to attempt to fix collinearities during the TetGen process.</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out a .vtk file.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.writeAdjustNa2">
+<span class="sig-name descname"><span class="pre">writeAdjustNa2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_Na</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">7.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write_dat</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.writeAdjustNa2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.writeAdjustNa2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes adjustment file to close off Na2+ channels in cells where CV ~ 0</p>
+<dl>
+<dt>Args:</dt><dd><p>tol: tolerance for when a point is considered to have a conduction velocity of 0. Points whose
+conduction velocity &lt; tol are considered to be zero.</p>
+<p>g_Na: value for (maximum) Sodium channel conductance. Open Na-channels are set to this conductance.
+Default: 7.8 pS</p>
+<p>write_dat: write a .dat file for visual inspection in e.g. meshalyzer.</p>
+</dd>
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out a .txt file and, if wanted, a .dat file</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.writeEndoEpi">
+<span class="sig-name descname"><span class="pre">writeEndoEpi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.writeEndoEpi"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.writeEndoEpi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads in .csv files from carto2csv.py, calculates normals of mesh facets and adds two layers of points
+along these normals: the epi- and endocardium. Writes out these two layers as .txt files.</p>
+<dl>
+<dt>Args:</dt><dd><p>thickness: the distance between the inner (endo) and outer (epi) layer</p>
+<p>ratio: the ratio of distances from both layers to the original middle layer. A ratio of .8 will add an outer
+layer .8*thickness from the middle and an inner layer .2*thickness to the inside. Ratios &gt; .5 are
+recommended to avoid self intersections.</p>
+</dd>
+<dt>Returns:</dt><dd><p>Nothing. Writes out two files: endo.txt and epi.txt</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="carto_mesh.CartoMesh.writeTags">
+<span class="sig-name descname"><span class="pre">writeTags</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/carto_mesh.html#CartoMesh.writeTags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#carto_mesh.CartoMesh.writeTags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes out all points in a mesh with a certain tag to a .csv file</p>
+<dl class="simple">
+<dt>Returns:</dt><dd><p>None: Nothing. Writes out .csv files.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+        </div>
+      </div>
+
+      <div id="side-menu-container">
+
+        <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+        <div id="side-menu" role="navigation">
+
+          
+  
+    
+  
+  
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../generated/carto_mesh.html">carto_mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/mesh_tools.html">mesh_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/reconstruct.html">reconstruct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/apply_cv.html">apply_cv</a></li>
+</ul>
+
+  
+
+
+        </div>
+
+        
+
+      </div>
+
+    </div>
+
+<footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../_sources/source/carto_mesh.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2021, Bjorge Meulemeester
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+</div>
+
+</body>
+</html>
