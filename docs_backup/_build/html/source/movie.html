@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2D2D2D" />
+  
+  <title>Reconstruct CARTO :: movie module</title>
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="../_static/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../_static/img/favicon-16x16.png">
+  <link rel="index" title="Index" href="../genindex.html"/>
+
+  <link rel="stylesheet" href="../_static/css/insegel.css"/>
+  <link rel="stylesheet" href="../_static/css/custom.css"/>
+
+  <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+  
+
+  <script src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+  <div id="insegel-container">
+    <header>
+      <div id="logo-container">
+          
+          <a href="../index.html"><img src="../_static/cv.png"></a>
+          
+      </div>
+      <div id="project-container">
+        
+        <h1>Reconstruct CARTO Documentation</h1>
+        
+      </div>
+    </header>
+
+    <div id="content-container">
+
+      <div id="main-content-container">
+        <div id="main-content" role="main">
+          
+  <div class="section" id="module-movie">
+<span id="movie-module"></span><h1>movie module<a class="headerlink" href="#module-movie" title="Permalink to this headline">¶</a></h1>
+<p>File containing functions to make gif frames showing the mesh transitions, as seen on the Readme.md.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="movie.getSubMesh">
+<span class="sig-prename descclassname"><span class="pre">movie.</span></span><span class="sig-name descname"><span class="pre">getSubMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">side</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'left'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/movie.html#getSubMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#movie.getSubMesh" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="movie.plot2Meshes">
+<span class="sig-prename descclassname"><span class="pre">movie.</span></span><span class="sig-name descname"><span class="pre">plot2Meshes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyvista.core.pointset.PolyData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pyvista.core.pointset.PolyData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh1_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh2_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/movie.html#plot2Meshes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#movie.plot2Meshes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="movie.writeFrames">
+<span class="sig-prename descclassname"><span class="pre">movie.</span></span><span class="sig-name descname"><span class="pre">writeFrames</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh1_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh2_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/movie.html#writeFrames"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#movie.writeFrames" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="movie.writeFramesCartoToDoubleLayer">
+<span class="sig-prename descclassname"><span class="pre">movie.</span></span><span class="sig-name descname"><span class="pre">writeFramesCartoToDoubleLayer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'Test_Meshes/OC59'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/movie.html#writeFramesCartoToDoubleLayer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#movie.writeFramesCartoToDoubleLayer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="movie.writeFramesConductionVelocity">
+<span class="sig-prename descclassname"><span class="pre">movie.</span></span><span class="sig-name descname"><span class="pre">writeFramesConductionVelocity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/movie.html#writeFramesConductionVelocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#movie.writeFramesConductionVelocity" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="movie.writeFramesRefine">
+<span class="sig-prename descclassname"><span class="pre">movie.</span></span><span class="sig-name descname"><span class="pre">writeFramesRefine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'Test_Meshes/OC59'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/movie.html#writeFramesRefine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#movie.writeFramesRefine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="movie.writeFramesTetrahedralise">
+<span class="sig-prename descclassname"><span class="pre">movie.</span></span><span class="sig-name descname"><span class="pre">writeFramesTetrahedralise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meshname</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'Test_Meshes/OC59'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/movie.html#writeFramesTetrahedralise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#movie.writeFramesTetrahedralise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+
+
+        </div>
+      </div>
+
+      <div id="side-menu-container">
+
+        <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+        <div id="side-menu" role="navigation">
+
+          
+  
+    
+  
+  
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../generated/carto_mesh.html">carto_mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/mesh_tools.html">mesh_tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/reconstruct.html">reconstruct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/apply_cv.html">apply_cv</a></li>
+</ul>
+
+  
+
+
+        </div>
+
+        
+
+      </div>
+
+    </div>
+
+<footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+                <li class="footer-element">
+                    
+                        <a href="../_sources/source/movie.rst.txt" rel="nofollow"> source</a>
+                    
+                </li>
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2021, Bjorge Meulemeester
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+</div>
+
+</body>
+</html>

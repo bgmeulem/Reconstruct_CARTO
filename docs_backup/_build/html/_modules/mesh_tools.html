@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#2D2D2D" />
+  
+  <title>Reconstruct CARTO :: mesh_tools</title>
+  
+
+  <link rel="icon" type="image/png" sizes="32x32" href="../_static/img/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../_static/img/favicon-16x16.png">
+  <link rel="index" title="Index" href="../genindex.html"/>
+
+  <link rel="stylesheet" href="../_static/css/insegel.css"/>
+  <link rel="stylesheet" href="../_static/css/custom.css"/>
+
+  <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/documentation_options.js"></script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+  
+
+  <script src="https://email.tl.fortawesome.com/c/eJxNjUEOgyAQAF8jR7Kw6wIHDh7sP1Cw2mgxgmn6-3JsMqc5zEQfE8dkxOY1KKMUOI3ACFKRJpSW2AAp7ontYIaxI6i7XPJVwyeVfCQ550Os3jLrGSNOLgbdAy6s0PBk2TFNjEbsfq31LB0OnX407pJa5v2faRadwSW63mn5KuLyR9j2tgx3zecanl-55R_-jjPs"></script> 
+</head>
+
+<body>
+  <div id="insegel-container">
+    <header>
+      <div id="logo-container">
+          
+          <h1>Reconstruct CARTO</h1>
+          
+      </div>
+      <div id="project-container">
+        
+        <h1>Documentation</h1>
+        
+      </div>
+    </header>
+
+    <div id="content-container">
+
+      <div id="main-content-container">
+        <div id="main-content" role="main">
+          
+  <h1>Source code for mesh_tools</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;This file contains a selection of useful vector operations and mesh operations such as io, cleaning, converting etc.</span>
+<span class="sd">This file is imported by carto_mesh.py&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">pyvista</span> <span class="k">as</span> <span class="nn">pv</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">neighbors</span> <span class="k">as</span> <span class="n">nb</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="kn">import</span> <span class="n">Popen</span><span class="p">,</span> <span class="n">PIPE</span>
+<span class="kn">import</span> <span class="nn">pymesh</span> <span class="k">as</span> <span class="nn">pm</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">configparser</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;fivethirtyeight&#39;</span><span class="p">)</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s1">&#39;axes.prop_cycle&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">by_key</span><span class="p">()[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span>  <span class="c1"># six &#39;fivethirtyeight&#39; themed colors</span>
+
+<span class="n">G_REGION</span> <span class="o">=</span> <span class="mi">1107558400</span>  <span class="c1"># Carto ID for conductive region</span>
+
+
+<div class="viewcode-block" id="normalize"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.normalize">[docs]</a><span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">vector</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">e</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">vector</span><span class="p">))</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">vector</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="calcAvNormal"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.calcAvNormal">[docs]</a><span class="k">def</span> <span class="nf">calcAvNormal</span><span class="p">(</span><span class="n">facets</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculates the average normal of a dataframe of triangles. Dataframe must contain</span>
+<span class="sd">    the components of the normals of each triangle in columns named &#39;NormalX&#39;, &#39;NormalY&#39;, &#39;NormalZ&#39;</span>
+<span class="sd">    as is the case for Carto data&quot;&quot;&quot;</span>
+    <span class="n">av_normal</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># loop over all facets and calculate average normal</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">facets</span><span class="p">[[</span><span class="s1">&#39;NormalX&#39;</span><span class="p">,</span> <span class="s1">&#39;NormalY&#39;</span><span class="p">,</span> <span class="s1">&#39;NormalZ&#39;</span><span class="p">,</span> <span class="s1">&#39;GroupID&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">av_normal</span><span class="p">)):</span>  <span class="c1"># from 0 to 2</span>
+            <span class="n">av_normal</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">av_normal</span> <span class="o">=</span> <span class="n">normalize</span><span class="p">(</span><span class="n">av_normal</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">av_normal</span></div>
+
+
+<div class="viewcode-block" id="meshToCsv"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.meshToCsv">[docs]</a><span class="k">def</span> <span class="nf">meshToCsv</span><span class="p">(</span><span class="n">inmesh</span><span class="p">,</span> <span class="n">meshdir</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">io</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">inmesh</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="c1"># variables used throughout loop:</span>
+        <span class="n">section</span> <span class="o">=</span> <span class="s2">&quot;Header&quot;</span>  <span class="c1"># name of current section</span>
+        <span class="n">current_line</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># index of current line being read</span>
+        <span class="n">section_line</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># index of current section name</span>
+        <span class="n">section_ind</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Section 0 = Header, file format info</span>
+        <span class="c1"># Section 1 = General Attributes, info about section data</span>
+        <span class="c1"># Section 2 = VerticesSection, x y z coordinates plus data (normals and GroupID)</span>
+        <span class="c1"># Section 3 = TrianglesSection,</span>
+        <span class="c1"># section 4 = VerticesColorSection</span>
+        <span class="c1"># Section 5 = VerticesAttributesSection</span>
+
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">current_line</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># update line index</span>
+
+            <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;[&quot;</span><span class="p">:</span>  <span class="c1"># new section encountered</span>
+                <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">section_ind</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;. &#39;</span> <span class="o">+</span> <span class="n">section</span><span class="p">)</span>
+                <span class="n">section</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># section name</span>
+                <span class="n">section_line</span> <span class="o">=</span> <span class="n">current_line</span>
+                <span class="n">section_ind</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="c1"># Opening or closing csv files</span>
+                <span class="k">if</span> <span class="n">section_ind</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">of</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># past VerticesSection, an outfile has already been created (infra)</span>
+                <span class="k">if</span> <span class="n">section_ind</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># skip GeneralAttributes</span>
+                    <span class="n">of</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">meshdir</span> <span class="o">+</span> <span class="n">section</span> <span class="o">+</span> <span class="s2">&quot;.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+                <span class="c1"># New tqdm loops per section</span>
+                <span class="c1"># if section_ind &gt; 1:</span>
+                <span class="c1">#     if section_ind &gt; 2:</span>
+                <span class="c1">#         time.sleep(1e-6)</span>
+                <span class="c1">#         loop.close()  # close previous loop</span>
+                <span class="c1">#     if section_ind == 3:</span>
+                <span class="c1">#         time.sleep(1e-6)</span>
+                <span class="c1">#         loop = tqdm(desc=&#39;        &#39; + section, total=n_triangles, position=0, leave=True)</span>
+                <span class="c1">#     else:</span>
+                <span class="c1">#         time.sleep(1e-6)</span>
+                <span class="c1">#         loop = tqdm(desc=&#39;        &#39; + section, total=n_vertices, position=0, leave=True)</span>
+
+            <span class="c1"># extract n_vertices and n_triangles to use for tqdm loops</span>
+            <span class="c1"># elif section_ind == 1:</span>
+            <span class="c1">#     if current_line == section_line + 3:  # n_verticess</span>
+            <span class="c1">#         n_vertices = int(line.split(&quot;=&quot;)[1])</span>
+            <span class="c1">#     elif current_line == section_line + 4:</span>
+            <span class="c1">#         n_triangles = int(line.split(&#39;=&#39;)[1])</span>
+
+            <span class="k">elif</span> <span class="n">section_ind</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># useful data</span>
+                <span class="k">if</span> <span class="n">section_ind</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                    <span class="n">header_line</span> <span class="o">=</span> <span class="n">section_line</span> <span class="o">+</span> <span class="mi">2</span>  <span class="c1"># VerticesColorSection has extra line</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">header_line</span> <span class="o">=</span> <span class="n">section_line</span> <span class="o">+</span> <span class="mi">1</span>
+
+                <span class="k">if</span> <span class="n">current_line</span> <span class="o">==</span> <span class="n">header_line</span><span class="p">:</span>  <span class="c1"># column names</span>
+                    <span class="n">column_names</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]</span>  <span class="c1"># first element is useless &quot;;&quot;</span>
+                    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;Index&quot;</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">column_names</span><span class="p">:</span>
+                        <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+                    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="c1"># time.sleep(1e-8)</span>
+
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;;&quot;</span><span class="p">:</span>  <span class="c1"># actual data, not empty line or column names</span>
+                    <span class="c1"># time.sleep(1e-8)</span>
+                    <span class="c1"># loop.update(1)</span>
+                    <span class="n">ind</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>  <span class="c1"># line has shape &quot;ind = x  y  z  nx  ny  nz  groupID</span>
+                    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ind</span><span class="p">))</span>
+                    <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>  <span class="c1"># ignore ind</span>
+                        <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;,&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">el</span><span class="p">))</span>
+                    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># time.sleep(1e-8)</span>
+        <span class="c1"># loop.close()</span>
+        <span class="c1"># time.sleep(1e-8)</span>
+        <span class="n">of</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="dist"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.dist">[docs]</a><span class="k">def</span> <span class="nf">dist</span><span class="p">(</span><span class="n">co1</span><span class="p">,</span> <span class="n">co2</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">e2</span><span class="p">)</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">e1</span><span class="p">)</span> <span class="k">for</span> <span class="n">e1</span><span class="p">,</span> <span class="n">e2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">co1</span><span class="p">,</span> <span class="n">co2</span><span class="p">)])</span></div>
+
+
+<div class="viewcode-block" id="pmToPvFaces"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.pmToPvFaces">[docs]</a><span class="k">def</span> <span class="nf">pmToPvFaces</span><span class="p">(</span><span class="n">pmfaces</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">pmfaces</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;At least one cell does not have 3 indices&#39;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="o">*</span><span class="n">f</span><span class="p">]</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">pmfaces</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="pvToPmCells"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.pvToPmCells">[docs]</a><span class="k">def</span> <span class="nf">pvToPmCells</span><span class="p">(</span><span class="n">pyvistafaces</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A pyvista cell looks like [npoints ind1 ind2 ...]</span>
+<span class="sd">    n_points : amount of points in cell</span>
+<span class="sd">    Not necessarily a triangle, not necessarily co-planar</span>
+<span class="sd">    this converts a pyvista face to a pymesh face: [in1 ind2 ind3]&quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of all faces</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">pyvistafaces</span><span class="p">):</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">pyvistafaces</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">co</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_points</span><span class="p">):</span>
+            <span class="n">cell</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pyvistafaces</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">co</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="n">n_points</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pvToPmFaces"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.pvToPmFaces">[docs]</a><span class="k">def</span> <span class="nf">pvToPmFaces</span><span class="p">(</span><span class="n">pyvistafaces</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A pyvista cell array looks like [npoints_1 ind1_1 ind2_1 ... npoints_i ind1_i ind2_i ...]</span>
+<span class="sd">    n_points : amount of points in face</span>
+<span class="sd">    ONLY works for triangles</span>
+<span class="sd">    this converts a pyvista face to a pymesh face: [in1 ind2 ind3]</span>
+<span class="sd">    Identical to pvToPmCells, but with extra check to see if all the faces have 3 nodes&quot;&quot;&quot;</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># list of all faces</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">pyvistafaces</span><span class="p">):</span>
+        <span class="n">n_points</span> <span class="o">=</span> <span class="n">pyvistafaces</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n_points</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># ignore all non-triangle surfaces</span>
+            <span class="n">face_</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">co</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_points</span><span class="p">):</span>
+                <span class="n">face_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pyvistafaces</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">co</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">face_</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="n">n_points</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="n">n_points</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="makePyVista"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.makePyVista">[docs]</a><span class="k">def</span> <span class="nf">makePyVista</span><span class="p">(</span><span class="n">pmmesh</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts PyMesh mesh to PyVista mesh&quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">pmmesh</span><span class="o">.</span><span class="n">get_attribute_names</span><span class="p">()</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">PolyData</span><span class="p">(</span><span class="n">pmmesh</span><span class="o">.</span><span class="n">vertices</span><span class="p">,</span> <span class="n">pmToPvFaces</span><span class="p">(</span><span class="n">pmmesh</span><span class="o">.</span><span class="n">faces</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">mesh</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">pmmesh</span><span class="o">.</span><span class="n">get_attribute</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mesh</span></div>
+
+
+<div class="viewcode-block" id="makePyMesh"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.makePyMesh">[docs]</a><span class="k">def</span> <span class="nf">makePyMesh</span><span class="p">(</span><span class="n">pvmesh</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Converts PyVista mesh to PyMesh mesh&quot;&quot;&quot;</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">pvmesh</span><span class="o">.</span><span class="n">array_names</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">form_mesh</span><span class="p">(</span><span class="n">pvmesh</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">pvToPmCells</span><span class="p">(</span><span class="n">pvmesh</span><span class="o">.</span><span class="n">faces</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+        <span class="n">mesh</span><span class="o">.</span><span class="n">add_attribute</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">mesh</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">pvmesh</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">mesh</span></div>
+
+
+<div class="viewcode-block" id="colorFromCsv"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.colorFromCsv">[docs]</a><span class="k">def</span> <span class="nf">colorFromCsv</span><span class="p">(</span><span class="n">meshdir</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Makes mesh from VerticesSection.csv and TrianglesSection.csv (generated by carto2csv.py)</span>
+<span class="sd">    Assigns tags in .mesh file as scalar data on this mesh</span>
+<span class="sd">    Returns mesh with this scalar data&quot;&quot;&quot;</span>
+    <span class="n">triangles</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">meshdir</span> <span class="o">+</span> <span class="s1">&#39;TrianglesSection.csv&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">tri</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">triangles</span><span class="p">[[</span><span class="s1">&#39;Vertex0&#39;</span><span class="p">,</span> <span class="s1">&#39;Vertex1&#39;</span><span class="p">,</span> <span class="s1">&#39;Vertex2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+    <span class="n">vertices</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">meshdir</span> <span class="o">+</span> <span class="s1">&#39;VerticesSection.csv&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+    <span class="n">vert</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1000.</span> <span class="o">*</span> <span class="n">co</span> <span class="k">for</span> <span class="n">co</span> <span class="ow">in</span> <span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">vertices</span><span class="p">[[</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;Z&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()])</span>
+
+    <span class="n">color</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">triangles</span><span class="p">[</span><span class="s1">&#39;GroupID&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()]</span>
+
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">PolyData</span><span class="p">(</span><span class="n">vert</span><span class="p">,</span> <span class="n">pmToPvFaces</span><span class="p">(</span><span class="n">tri</span><span class="p">))</span>
+    <span class="n">mesh</span><span class="p">[</span><span class="s1">&#39;color&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">ctp</span><span class="p">()</span>  <span class="c1"># triangle data to point data</span>
+    <span class="k">return</span> <span class="n">mesh</span></div>
+
+
+<div class="viewcode-block" id="makeNonCollinear"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.makeNonCollinear">[docs]</a><span class="k">def</span> <span class="nf">makeNonCollinear</span><span class="p">(</span><span class="n">pvmesh</span><span class="p">,</span> <span class="n">edges</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Iterates mesh and moves over points in the middle of two colinear edges.</span>
+<span class="sd">    edges must be 2D array&quot;&quot;&quot;</span>
+    <span class="n">mesh</span> <span class="o">=</span> <span class="n">pvmesh</span>
+    <span class="n">points</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">points</span>
+    <span class="n">triangles</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">pvToPmFaces</span><span class="p">(</span><span class="n">pvmesh</span><span class="o">.</span><span class="n">faces</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[[</span><span class="s1">&#39;Vertex0&#39;</span><span class="p">,</span> <span class="s1">&#39;Vertex1&#39;</span><span class="p">,</span> <span class="s1">&#39;Vertex2&#39;</span><span class="p">]])</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">nb</span><span class="o">.</span><span class="n">KDTree</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">points</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">edgepair</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+        <span class="n">edge1</span><span class="p">,</span> <span class="n">edge2</span> <span class="o">=</span> <span class="n">edgepair</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">edgepair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># indices of edges</span>
+        <span class="n">cp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">edge1</span><span class="p">,</span> <span class="n">edge2</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># index of common point</span>
+        <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">edge1</span> <span class="o">+</span> <span class="n">edge2</span> <span class="k">if</span> <span class="n">e</span> <span class="o">!=</span> <span class="n">cp</span><span class="p">]</span>
+        <span class="n">co_cp</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">cp</span><span class="p">]</span>  <span class="c1"># coordinate of common point</span>
+
+        <span class="c1">### check which one is in the middle:</span>
+        <span class="n">segm</span> <span class="o">=</span> <span class="p">[</span><span class="n">cp</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">]</span>  <span class="c1"># indices of segment complex</span>
+        <span class="c1"># start out with assumption that common point is in the middle</span>
+        <span class="c1"># and that the sum of the distances to its neighbors is smallest</span>
+        <span class="n">minsum</span> <span class="o">=</span> <span class="n">dist</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">cp</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="n">p1</span><span class="p">])</span> <span class="o">+</span> <span class="n">dist</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">cp</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="n">p2</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">segm</span><span class="p">:</span>  <span class="c1"># now check if that&#39;s true</span>
+            <span class="n">other_points</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">segm</span> <span class="k">if</span> <span class="n">e</span> <span class="o">!=</span> <span class="n">p</span><span class="p">]</span>
+            <span class="nb">sum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="n">dist</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">points</span><span class="p">[</span><span class="n">e</span><span class="p">])</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">other_points</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">sum</span> <span class="o">&lt;</span> <span class="n">minsum</span><span class="p">:</span>  <span class="c1"># this point is in the middle!</span>
+                <span class="n">cp</span> <span class="o">=</span> <span class="n">p</span>  <span class="c1"># cp now stand for &quot;center point&quot; instead of common point</span>
+                <span class="c1"># this is the point we need to move</span>
+
+        <span class="n">adjacent_faces</span> <span class="o">=</span> <span class="n">triangles</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">triangles</span><span class="p">[[</span><span class="s1">&#39;Vertex0&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">cp</span><span class="p">)</span> <span class="o">|</span>
+                                       <span class="p">(</span><span class="n">triangles</span><span class="p">[[</span><span class="s1">&#39;Vertex1&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">cp</span><span class="p">)</span> <span class="o">|</span>
+                                       <span class="p">(</span><span class="n">triangles</span><span class="p">[[</span><span class="s1">&#39;Vertex2&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span> <span class="o">==</span> <span class="n">cp</span><span class="p">)]</span>
+
+        <span class="n">av_dir</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">([</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">adjacent_faces</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">if</span> <span class="n">e</span> <span class="o">!=</span> <span class="n">cp</span><span class="p">]):</span>
+            <span class="n">co</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">point</span><span class="p">]</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="o">-</span> <span class="n">c</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">co</span><span class="p">,</span> <span class="n">co_cp</span><span class="p">)]</span>
+            <span class="n">av_dir</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="o">+</span> <span class="n">n</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">av_dir</span><span class="p">,</span> <span class="n">direction</span><span class="p">)]</span>
+        <span class="n">av_dir</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">av_dir</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">av_dir</span><span class="p">]</span>
+
+        <span class="c1"># get closest neighbour to center point of colinear edges</span>
+        <span class="n">distance</span><span class="p">,</span> <span class="n">ind</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">([</span><span class="n">co_cp</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># check edge-range for an idea of this value</span>
+        <span class="c1"># Move point just a tad aside</span>
+        <span class="n">points</span><span class="p">[</span><span class="n">cp</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">p</span> <span class="o">+</span> <span class="n">d</span> <span class="o">*</span> <span class="n">distance</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">co_cp</span><span class="p">,</span> <span class="n">av_dir</span><span class="p">)])</span>
+
+        <span class="c1"># move other points in the other direction (optional):</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">segm</span> <span class="k">if</span> <span class="n">e</span> <span class="o">!=</span> <span class="n">cp</span><span class="p">]:</span>
+            <span class="n">points</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">e</span> <span class="o">-</span> <span class="n">d</span> <span class="o">*</span> <span class="n">distance</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="k">for</span> <span class="n">e</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">points</span><span class="p">[</span><span class="n">p</span><span class="p">],</span> <span class="n">av_dir</span><span class="p">)])</span>
+    <span class="n">newmesh</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">PolyData</span><span class="p">(</span><span class="n">points</span><span class="p">,</span> <span class="n">pvmesh</span><span class="o">.</span><span class="n">faces</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">newmesh</span></div>
+
+
+<div class="viewcode-block" id="cleanMesh_Meshtool"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.cleanMesh_Meshtool">[docs]</a><span class="k">def</span> <span class="nf">cleanMesh_Meshtool</span><span class="p">(</span><span class="n">meshname</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=.</span><span class="mi">3</span><span class="p">,</span> <span class="n">ifmt</span><span class="o">=</span><span class="s1">&#39;carp_txt&#39;</span><span class="p">,</span> <span class="n">ofmt</span><span class="o">=</span><span class="s1">&#39;carp_txt&#39;</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">(</span><span class="s2">&quot;meshtool clean quality -msh=</span><span class="si">{0}</span><span class="s2"> -thr=</span><span class="si">{1}</span><span class="s2">&quot;</span>
+              <span class="s2">&quot;-ifmt=</span><span class="si">{2}</span><span class="s2"> -ofmt=</span><span class="si">{3}</span><span class="s2"> -outmsh=</span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">meshname</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">ifmt</span><span class="p">,</span> <span class="n">ofmt</span><span class="p">),</span>
+              <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Output category check</span>
+    <span class="n">output_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Reading elements&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading elements in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Reading points&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading points in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Reading fibers&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading fibers (1 direction) in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing elements&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing elements in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing points&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing points in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing fibers&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing fibers in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Reading mesh&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading mesh...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing mesh&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing mesh...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Iteration&#39;</span><span class="p">:</span> <span class="s1">&#39;Shifting points...&#39;</span><span class="p">}</span>
+
+    <span class="c1"># output handling</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">output_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">val</span><span class="p">)</span>
+                    <span class="n">output_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="k">break</span></div>
+
+
+<div class="viewcode-block" id="getEdgeLengths"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.getEdgeLengths">[docs]</a><span class="k">def</span> <span class="nf">getEdgeLengths</span><span class="p">(</span><span class="n">mesh</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Gets all edge lengths from a PyMesh mesh (used in homogenizeMesh())&quot;&quot;&quot;</span>
+    <span class="n">edges</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">extract_all_edges</span><span class="p">()</span>
+    <span class="n">pmedges</span> <span class="o">=</span> <span class="n">pvToPmCells</span><span class="p">(</span><span class="n">edges</span><span class="o">.</span><span class="n">extract_cells</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">edges</span><span class="o">.</span><span class="n">n_cells</span><span class="p">))</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span>  <span class="c1"># extract edge ind as cells</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">pmedges</span><span class="p">:</span>
+        <span class="n">co1</span><span class="p">,</span> <span class="n">co2</span> <span class="o">=</span> <span class="n">edges</span><span class="o">.</span><span class="n">points</span><span class="p">[</span><span class="n">pair</span><span class="p">]</span>
+        <span class="n">distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dist</span><span class="p">(</span><span class="n">co1</span><span class="p">,</span> <span class="n">co2</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">distances</span></div>
+
+
+<div class="viewcode-block" id="convertMesh_Meshtool"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.convertMesh_Meshtool">[docs]</a><span class="k">def</span> <span class="nf">convertMesh_Meshtool</span><span class="p">(</span><span class="n">meshname</span><span class="p">,</span> <span class="n">ifmt</span><span class="o">=</span><span class="s1">&#39;vtk&#39;</span><span class="p">,</span> <span class="n">ofmt</span><span class="o">=</span><span class="s1">&#39;carp_txt&#39;</span><span class="p">):</span>
+    <span class="n">imsh</span> <span class="o">=</span> <span class="n">meshname</span>
+    <span class="n">omsh</span> <span class="o">=</span> <span class="n">meshname</span>
+    <span class="k">if</span> <span class="n">ifmt</span> <span class="o">==</span> <span class="s1">&#39;vtk&#39;</span><span class="p">:</span>
+        <span class="n">imsh</span> <span class="o">+=</span> <span class="s1">&#39;.1&#39;</span>
+    <span class="k">if</span> <span class="n">ofmt</span> <span class="o">==</span> <span class="s1">&#39;vtk&#39;</span><span class="p">:</span>
+        <span class="n">omsh</span> <span class="o">+=</span> <span class="s1">&#39;.1&#39;</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">(</span><span class="s2">&quot;meshtool convert -imsh=</span><span class="si">{}</span><span class="s2"> -ifmt=</span><span class="si">{}</span><span class="s2"> -omsh=</span><span class="si">{}</span><span class="s2"> -ofmt=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">imsh</span><span class="p">,</span> <span class="n">ifmt</span><span class="p">,</span> <span class="n">omsh</span><span class="p">,</span> <span class="n">ofmt</span><span class="p">),</span>
+              <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+    <span class="c1"># checks if meshtool is at a certain point in output</span>
+    <span class="c1"># Output category check</span>
+    <span class="n">output_map</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Reading elements&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading elements in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Reading points&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading points in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Reading fibers&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading fibers (1 direction) in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing elements&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing elements in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing points&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing points in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing fibers&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing fibers in text CARP format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Reading vtk&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading vtk file...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing vtk file in text format&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing vtk file in text format...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Reading mesh&#39;</span><span class="p">:</span> <span class="s1">&#39;Reading mesh...&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;Writing mesh&#39;</span><span class="p">:</span> <span class="s1">&#39;Writing mesh...&#39;</span><span class="p">}</span>
+
+    <span class="c1"># output handling</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">stdout</span><span class="p">:</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">output_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">val</span><span class="p">)</span>
+                    <span class="n">output_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                    <span class="k">break</span></div>
+
+
+<div class="viewcode-block" id="ptsToParaview"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.ptsToParaview">[docs]</a><span class="k">def</span> <span class="nf">ptsToParaview</span><span class="p">(</span><span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">column_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;meshID&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># .pts meshfile to paraview csv</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a pts file, adds point ID as extra data to each point, writes out to csv file</span>
+<span class="sd">    Args:</span>
+<span class="sd">      filename: Name of .pts file (including &#39;.pts&#39; extension) to be converted to paraview-friendly format</span>
+<span class="sd">      column_name: Name of the column to contain the mesh indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">ofname</span> <span class="o">=</span> <span class="n">filename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">ofname</span> <span class="o">+</span> <span class="s2">&quot;_paraview.csv&quot;</span><span class="p">,</span> <span class="s2">&quot;w+&quot;</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\t</span><span class="s1">Writing </span><span class="si">{}</span><span class="s1">_paraview.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ofname</span><span class="p">))</span>
+    <span class="c1"># csv header</span>
+    <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;X,Y,Z,</span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">column_name</span><span class="p">))</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">readlines</span><span class="p">()[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;        &#39;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">line</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">():</span>  <span class="c1"># x, y or z co-ordinate</span>
+            <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;,&#39;</span><span class="p">)</span>  <span class="c1"># write co-ordinates</span>
+        <span class="n">outfile</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>  <span class="c1"># add point ID</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">outfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="vtkToStl"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.vtkToStl">[docs]</a><span class="k">def</span> <span class="nf">vtkToStl</span><span class="p">(</span><span class="n">vtk_mesh</span><span class="p">,</span> <span class="n">location</span><span class="p">,</span> <span class="n">meshname</span><span class="p">):</span>
+    <span class="c1"># mesh = pv.PolyData(mesh.points, mesh.cells)</span>
+    <span class="n">faces</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">DataSetFilters</span><span class="o">.</span><span class="n">extract_surface</span><span class="p">(</span><span class="n">vtk_mesh</span><span class="p">)</span>
+    <span class="n">pv</span><span class="o">.</span><span class="n">save_meshio</span><span class="p">(</span><span class="n">location</span> <span class="o">+</span> <span class="s1">&#39;/&#39;</span> <span class="o">+</span> <span class="n">meshname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.stl&#39;</span><span class="p">,</span> <span class="n">faces</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="writeToSmesh"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.writeToSmesh">[docs]</a><span class="k">def</span> <span class="nf">writeToSmesh</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="n">of</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">name</span> <span class="o">+</span> <span class="s1">&#39;.smesh&#39;</span><span class="p">,</span> <span class="s1">&#39;w+&#39;</span><span class="p">)</span>
+    <span class="c1"># attr_names = mesh.array_names ??</span>
+
+    <span class="c1"># Write points</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# Part 1 - the node list</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># &lt;# of points&gt; &lt;dimension (3)&gt; &lt;# of attributes&gt; &lt;boundary markers (0 or 1)&gt;</span>
+    <span class="c1"># npoints, 3D, 1 attribute (= g_region 1107558400), 1 for boundary marker</span>
+    <span class="n">attr_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;g_region&quot;</span><span class="p">]</span>  <span class="c1"># hard-coded until correct implementation</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> 3 </span><span class="si">{}</span><span class="s2"> 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">n_points</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">attr_names</span><span class="p">)))</span>  <span class="c1"># header</span>
+    <span class="n">pointbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">points</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;        Writing points  &#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">pt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pointbar</span><span class="p">):</span>
+        <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">*</span><span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">co</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span> <span class="k">for</span> <span class="n">co</span> <span class="ow">in</span> <span class="n">pt</span><span class="p">]))</span>  <span class="c1"># index and co</span>
+        <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">G_REGION</span><span class="si">}</span><span class="s2"> &quot;</span><span class="p">)</span>
+        <span class="c1"># for attr in attr_names:  # attributes</span>
+        <span class="c1"># of.write(str(mesh[attr][i]) + &quot; &quot;)</span>
+        <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># boundary marker</span>
+
+    <span class="c1"># Write faces</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# Part 2 - the facet list</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># &lt;# of facets&gt; &lt;boundary markers (0 or 1)&gt;</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">n_faces</span><span class="p">))</span>  <span class="c1"># header</span>
+
+    <span class="n">faces</span> <span class="o">=</span> <span class="n">pvToPmCells</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">faces</span><span class="p">)</span>
+    <span class="n">facesbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">faces</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;        Writing faces  &#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">facesbar</span><span class="p">:</span>
+        <span class="c1"># 1 polygon, boundary marker</span>
+        <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;3&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">v</span><span class="p">))</span>
+        <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot; 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">pointbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="n">facesbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># Write hole</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;# Part 3 - the hole list</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># &lt;# of holes&gt;</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;1&quot;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># Coordinate of hole (i.e. center of mesh)</span>
+    <span class="n">of</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;0 </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">points</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)))</span></div>
+
+
+<div class="viewcode-block" id="cleanMesh"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.cleanMesh">[docs]</a><span class="k">def</span> <span class="nf">cleanMesh</span><span class="p">(</span><span class="n">pvmesh</span><span class="p">,</span> <span class="n">tol</span><span class="p">,</span> <span class="nb">iter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">print_si</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Uses Bilt-in PyVista and PyMesh methods to clean the mesh.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        pvmesh: The mesh in PyVista&#39;s PolyData format</span>
+<span class="sd">        tol: Absolute tolerance to use in PyMesh&#39;s remove_duplicated_vertices and PyVista&#39;s clean() methods</span>
+<span class="sd">        iter: Amount of iterations to try and remove self-intersections with PyMesh</span>
+<span class="sd">        print_si: Print progress of self-intersection cleanup</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        PolyData: The cleaned mesh</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mesh_</span> <span class="o">=</span> <span class="n">pvmesh</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">lines_to_points</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">polys_to_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">mesh_</span> <span class="o">=</span> <span class="n">makePyMesh</span><span class="p">(</span><span class="n">mesh_</span><span class="p">)</span>
+    <span class="n">mesh_</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">remove_degenerated_triangles</span><span class="p">(</span><span class="n">mesh_</span><span class="p">)</span>
+    <span class="n">si</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">detect_self_intersection</span><span class="p">(</span><span class="n">mesh_</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">print_si</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">si</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; self-intersections detected&#39;</span><span class="p">)</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">iter</span> <span class="ow">and</span> <span class="n">si</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># there are still self-intersections, max 10 iterations</span>
+        <span class="n">mesh_</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">remove_duplicated_faces</span><span class="p">(</span><span class="n">mesh_</span><span class="p">)</span>
+        <span class="n">mesh_</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">remove_duplicated_vertices</span><span class="p">(</span><span class="n">mesh_</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">)</span>
+        <span class="n">mesh_</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">resolve_self_intersection</span><span class="p">(</span><span class="n">mesh_</span><span class="p">)</span>
+        <span class="n">si</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">detect_self_intersection</span><span class="p">(</span><span class="n">mesh_</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">print_si</span><span class="p">:</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\r</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\t</span><span class="s1">Iteration </span><span class="si">{}</span><span class="s1">: &#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">si</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; self-intersection(s) left &#39;</span><span class="p">)</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">mesh_</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">remove_duplicated_vertices</span><span class="p">(</span><span class="n">mesh_</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="n">tol</span><span class="p">)</span>
+    <span class="n">mesh_</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">remove_duplicated_faces</span><span class="p">(</span><span class="n">mesh_</span><span class="p">)</span>
+    <span class="n">mesh_</span> <span class="o">=</span> <span class="n">makePyVista</span><span class="p">(</span><span class="n">mesh_</span><span class="p">)</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">lines_to_points</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">polys_to_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">tolerance</span><span class="o">=</span><span class="n">tol</span><span class="p">,</span> <span class="n">absolute</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mesh_</span></div>
+
+
+<div class="viewcode-block" id="getGroupIds"><a class="viewcode-back" href="../source/mesh_tools.html#mesh_tools.getGroupIds">[docs]</a><span class="k">def</span> <span class="nf">getGroupIds</span><span class="p">(</span><span class="n">csvfile</span><span class="o">=</span><span class="s1">&#39;TrianglesSection.csv&#39;</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">skip</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+        <span class="n">skip</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1000000</span><span class="p">]</span>  <span class="c1"># skip border region and myocardium</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">csvfile</span><span class="p">)</span>
+    <span class="n">ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">f</span><span class="p">[</span><span class="s2">&quot;GroupID&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">if</span> <span class="n">e</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">skip</span><span class="p">])</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span></div>
+</pre></div>
+
+        </div>
+      </div>
+
+      <div id="side-menu-container">
+
+        <div id="search" role="search">
+        <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+            <input type="text" name="q" placeholder="Search..." />
+            <input type="hidden" name="check_keywords" value="yes" />
+            <input type="hidden" name="area" value="default" />
+        </form>
+</div>
+
+        <div id="side-menu" role="navigation">
+
+          
+  
+    
+  
+  
+    <ul>
+<li class="toctree-l1"><a class="reference internal" href="../generated/apply_cv.html">apply_cv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/reconstruct.html">reconstruct</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/carto_mesh.html">carto_mesh</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../generated/mesh_tools.html">mesh_tools</a></li>
+</ul>
+
+  
+
+
+        </div>
+
+        
+
+      </div>
+
+    </div>
+
+<footer>
+    <div id="footer-info">
+        <ul id="build-details">
+            
+
+            
+
+            
+        </ul>
+
+        
+            <div id="copyright">
+                &copy; 2021, Bjorge Meulemeester
+            </div>
+        
+
+        <div id="credit">
+            created with <a href="http://sphinx-doc.org/">Sphinx</a> and <a href="https://github.com/Autophagy/insegel">Insegel</a>
+
+        </div>
+    </div>
+
+    <a id="menu-toggle" class="fa fa-bars" aria-hidden="true"></a>
+
+    <script type="text/javascript">
+      $("#menu-toggle").click(function() {
+        $("#menu-toggle").toggleClass("toggled");
+        $("#side-menu-container").slideToggle(300);
+      });
+    </script>
+
+</footer> 
+
+</div>
+
+</body>
+</html>
