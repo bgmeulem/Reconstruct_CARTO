@@ -51,4 +51,5 @@ CartoMesh class and its dependencies.
 >>> m.reconstruct()
 ```
 
-# [Documentation](https://bgmeulem.github.io/Reconstruct_CARTO/html/index.html)
+# Documentation
+Documentation can be found [here](https://bgmeulem.github.io/Reconstruct_CARTO/html/index.html)
