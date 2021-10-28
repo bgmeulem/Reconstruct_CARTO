@@ -43,7 +43,7 @@ conduction velocity values need to be passed as an argument to ``apply_cv.py``.
 python apply_cv.py <name> --<write_adjust> --<region_dir> --<speed_file> --<ncv> --<speed_col> --<writeVTK>
 ```
 
-Alternatively, if you want full control over the mesh reconstruction and its subfacets, you can also import the
+Alternatively, if you want full control over the mesh reconstruction and its intermediate steps, you can also import the
 CartoMesh class and its dependencies.
 ```
 >>> from carto_mesh import *
