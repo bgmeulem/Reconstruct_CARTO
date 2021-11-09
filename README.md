@@ -1,6 +1,6 @@
 # Reconstruct_CARTO
 This repository provides code capable of reconstructing a simulatable 3D mesh from clinical CARTO mapping data, providing control over mesh resolution, 
-conduction velocity distributions and non-conductive regions.
+conduction velocity distributions and non-conductive regions. The mesh thickness is currently fixed at .5 mm
 
 <p align="center">
 <img src=https://media0.giphy.com/media/bZM2OaOQb4HCVymzna/giphy.gif?cid=790b76112533f1a2f99b476d6833aa55d4b4c8ef9e3227b2&rid=giphy.gif&ct=g />
@@ -30,21 +30,24 @@ This will install the following modules, or update them if they are not already 
 
 
 # Usage
-**Reconstructing** involves taking an input ```.mesh``` file and making it into a tetrahedron mesh with user-defined 
+**Reconstructing** involves taking an input `.mesh` file and making it into a tetrahedron mesh with user-defined 
 resolution. Conduction velocities can already be interpolated on this mesh if a .csv file containing point coordinates 
 and speed values is passed as an optional argument.
 ```
-python reconstruct.py <name> --<speed_file>
+python reconstruct.py <carto name> --<speed_file>
 ```
 **Interpolating conduction velocities** can also be done after reconstruction, e.g. in case you want to select
 non-conductive regions on the mesh *after* the reconstruction. To this end, a .csv file with point coordinates and
-conduction velocity values need to be passed as an argument to ``apply_cv.py``.
+conduction velocity values need to be passed as an argument to the runfile `apply_cv.py`.
 ```
-python apply_cv.py <name> --<write_adjust> --<region_dir> --<speed_file> --<ncv> --<speed_col> --<writeVTK>
+python apply_cv.py <reconstructed .vtk mesh name> --<speed_file> --<write_adjust> --<region_dir>  --<ncv> --<speed_col> --<writeVTK>
 ```
 
-Alternatively, if you want full control over the mesh reconstruction and its subfacets, you can also import the
-CartoMesh class and its dependencies.
+Keep in mind that using command-line arguments will override any setting defined in the `settings.ini` file.
+
+Alternatively, if you want full control over the mesh reconstruction and its intermediate steps, you can also import the
+CartoMesh class and its dependencies. This provides more control over the reconstruction process than just the two 
+runfiles `reconstruct.py` and `apply_cv.py` along with the settings file `settings.ini`.
 ```
 >>> from carto_mesh import *
 >>> m = CartoMesh('filename.mesh')

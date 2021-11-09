@@ -264,14 +264,16 @@ class CartoMesh:
         along these normals: the epi- and endocardium. Writes out these two layers as .txt files.
 
         Args:
-            thickness: the distance between the inner (endo) and outer (epi) layer
+            thickness: the distance between the inner (endo) and outer (epi) layer in cm.
 
             ratio: the ratio of distances from both layers to the original middle layer. A ratio of .8 will add an outer
             layer .8*thickness from the middle and an inner layer .2*thickness to the inside. Ratios > .5 are
             recommended to avoid self intersections.
 
         Returns:
-            Nothing. Writes out two files: endo.txt and epi.txt
+            None: Nothing. Writes out two files: endo.txt and epi.txt. These are two point-cloud meshes containing the
+            mesh point coordinates of the epicardium and endocardium.
+            Coordinates are written out in mm. Not in cm like the input file.
         """
         self.thickness = thickness
         self.ratio = ratio
