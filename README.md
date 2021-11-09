@@ -58,4 +58,4 @@ runfiles `reconstruct.py` and `apply_cv.py` along with the settings file `settin
 Documentation can be found [here](https://bgmeulem.github.io/Reconstruct_CARTO/html/index.html)
 
 # Contact
-Feel free to report any bugs, issues or propose features either directly via github, or per [mail](mailto:bjorge1997@hotmail.com?subject=[GitHub]Reconstruct_CARTO%20bug%20report/feature%20suggestion)
+Feel free to report any bugs, issues or propose features either directly via github, or per [mail](mailto:bjorge1997@hotmail.com?subject=[GitHub]%20Reconstruct_CARTO:%20bug%20report%20/%20feature%20suggestion)
