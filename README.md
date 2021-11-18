@@ -1,6 +1,6 @@
 # Reconstruct_CARTO
 This repository provides code capable of reconstructing a simulatable 3D mesh from clinical CARTO mapping data, providing control over mesh resolution, 
-conduction velocity distributions and non-conductive regions. The mesh thickness is currently fixed at .5 mm
+conduction velocity distributions and non-conductive regions. The mesh thickness is currently fixed at 5 mm
 
 <p align="center">
 <img src=https://media0.giphy.com/media/bZM2OaOQb4HCVymzna/giphy.gif?cid=790b76112533f1a2f99b476d6833aa55d4b4c8ef9e3227b2&rid=giphy.gif&ct=g />
