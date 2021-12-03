@@ -33,13 +33,13 @@ This will install the following modules, or update them if they are not already 
 **Reconstructing** involves taking an input `.mesh` file and making it into a tetrahedron mesh with user-defined 
 resolution. Conduction velocities can already be interpolated on this mesh if a .csv file containing point coordinates 
 and speed values is passed as an optional argument.
-```
+```shell
 python reconstruct.py <carto name> --<speed_file>
 ```
 **Interpolating conduction velocities** can also be done after reconstruction, e.g. in case you want to select
 non-conductive regions on the mesh *after* the reconstruction. To this end, a .csv file with point coordinates and
 conduction velocity values need to be passed as an argument to the runfile `apply_cv.py`.
-```
+```shell
 python apply_cv.py <reconstructed .vtk mesh name> --<speed_file> --<write_adjust> --<region_dir>  --<ncv> --<speed_col> --<writeVTK>
 ```
 
@@ -48,7 +48,7 @@ Keep in mind that using command-line arguments will override any setting defined
 Alternatively, if you want full control over the mesh reconstruction and its intermediate steps, you can also import the
 CartoMesh class and its dependencies. This provides more control over the reconstruction process than just the two 
 runfiles `reconstruct.py` and `apply_cv.py` along with the settings file `settings.ini`.
-```
+```python
 >>> from carto_mesh import *
 >>> m = CartoMesh('filename.mesh')
 >>> m.reconstruct()
