@@ -17,7 +17,7 @@ Some requirements are not automatically installable. These requirements are:
 
 
 To install the remaining requirements, run
-```
+```shell
 pip install -r requirements.txt
 ```
 This will install the following modules, or update them if they are not already installed:
